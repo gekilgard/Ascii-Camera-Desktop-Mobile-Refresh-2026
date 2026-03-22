@@ -1,6 +1,12 @@
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { AsciiRendererHandle, AsciiSettings, CHAR_SETS, ProcessingStats } from '../types/types'
-import { adjustColor, createBrightnessMap, getChar, getLuminance } from '../utils/asciiUtils'
+import {
+    adjustColor,
+    adjustSaturationRgb,
+    createBrightnessMap,
+    getChar,
+    getLuminance,
+} from '../utils/asciiUtils'
 
 interface AsciiViewProps {
     settings: AsciiSettings
@@ -152,15 +158,16 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     const r = pixels[i * 4]
                     const g = pixels[i * 4 + 1]
                     const b = pixels[i * 4 + 2]
+                    const [rs, gs, bs] = adjustSaturationRgb(r, g, b, settings.saturation)
 
-                    let l = getLuminance(r, g, b)
+                    let l = getLuminance(rs, gs, bs)
                     l = adjustColor(l, settings.contrast, settings.brightness)
 
                     if (solidBlocks) {
                         if (settings.colorMode) {
-                            const ra = adjustColor(r, settings.contrast, settings.brightness)
-                            const ga = adjustColor(g, settings.contrast, settings.brightness)
-                            const ba = adjustColor(b, settings.contrast, settings.brightness)
+                            const ra = adjustColor(rs, settings.contrast, settings.brightness)
+                            const ga = adjustColor(gs, settings.contrast, settings.brightness)
+                            const ba = adjustColor(bs, settings.contrast, settings.brightness)
                             tempCtx.fillStyle = `rgb(${Math.round(ra)},${Math.round(ga)},${Math.round(ba)})`
                         } else {
                             const q = quantizeBlockLevel(settings.invert ? 255 - l : l)
@@ -187,7 +194,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         tempCtx.fillStyle =
                             settings.characterSet === 'matrix'
                                 ? matrixGreenFromLuma(l, settings.invert)
-                                : `rgb(${r},${g},${b})`
+                                : `rgb(${rs},${gs},${bs})`
                     } else {
                         tempCtx.fillStyle = getMonochromeForeground(
                             settings.characterSet,
@@ -232,7 +239,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 for (let y = 0; y < standardHeight; y++) {
                     for (let x = 0; x < standardWidth; x++) {
                         const idx = (y * standardWidth + x) * 4
-                        const l = getLuminance(pixels[idx], pixels[idx + 1], pixels[idx + 2])
+                        const [rs, gs, bs] = adjustSaturationRgb(
+                            pixels[idx],
+                            pixels[idx + 1],
+                            pixels[idx + 2],
+                            settings.saturation,
+                        )
+                        const l = getLuminance(rs, gs, bs)
                         const adjL = adjustColor(l, settings.contrast, settings.brightness)
                         const char = getChar(adjL, brightnessMap, settings.invert)
 
@@ -311,7 +324,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const pixels = hiddenCtx.getImageData(0, 0, srcW, srcH).data
 
                 const brightnessMap = createBrightnessMap(ramp)
-                const { contrast, brightness: brightnessOffset, colorMode, invert } = settings
+                const {
+                    contrast,
+                    brightness: brightnessOffset,
+                    colorMode,
+                    invert,
+                    saturation,
+                } = settings
                 const dither = isDitherMode(settings.characterSet)
 
                 const cssW = solidBlocks ? blockGrid!.cssW : srcW * fontScale
@@ -356,8 +375,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
+                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
 
-                        let l = 0.299 * r + 0.587 * g + 0.114 * b
+                        let l = getLuminance(rs, gs, bs)
                         if (contrast !== 1.0 || brightnessOffset !== 0) {
                             l = adjustColor(l, contrast, brightnessOffset)
                         }
@@ -380,7 +400,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             ctx.fillStyle =
                                 settings.characterSet === 'matrix'
                                     ? matrixGreenFromLuma(blended, invert)
-                                    : `rgb(${r},${g},${b})`
+                                    : `rgb(${rs},${gs},${bs})`
                         } else {
                             ctx.fillStyle = getMonochromeForeground(settings.characterSet, invert)
                         }
@@ -394,8 +414,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
+                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
 
-                        let l = 0.299 * r + 0.587 * g + 0.114 * b
+                        let l = getLuminance(rs, gs, bs)
                         if (contrast !== 1.0 || brightnessOffset !== 0) {
                             l = adjustColor(l, contrast, brightnessOffset)
                         }
@@ -404,9 +425,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const y = Math.floor(i / srcW) * cellSize
 
                         if (colorMode) {
-                            const ra = adjustColor(r, contrast, brightnessOffset)
-                            const ga = adjustColor(g, contrast, brightnessOffset)
-                            const ba = adjustColor(b, contrast, brightnessOffset)
+                            const ra = adjustColor(rs, contrast, brightnessOffset)
+                            const ga = adjustColor(gs, contrast, brightnessOffset)
+                            const ba = adjustColor(bs, contrast, brightnessOffset)
                             ctx.fillStyle = `rgb(${Math.round(ra)},${Math.round(ga)},${Math.round(ba)})`
                         } else {
                             const q = quantizeBlockLevel(invert ? 255 - l : l)
@@ -421,8 +442,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
+                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
 
-                        let l = 0.299 * r + 0.587 * g + 0.114 * b
+                        let l = getLuminance(rs, gs, bs)
 
                         if (contrast !== 1.0 || brightnessOffset !== 0) {
                             l = adjustColor(l, contrast, brightnessOffset)
@@ -437,7 +459,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             ctx.fillStyle =
                                 settings.characterSet === 'matrix'
                                     ? matrixGreenFromLuma(l, invert)
-                                    : `rgb(${r},${g},${b})`
+                                    : `rgb(${rs},${gs},${bs})`
                         } else {
                             ctx.fillStyle = getMonochromeForeground(settings.characterSet, invert)
                         }

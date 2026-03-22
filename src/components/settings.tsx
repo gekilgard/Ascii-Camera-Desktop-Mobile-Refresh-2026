@@ -16,6 +16,7 @@ const SLIDER_CONFIGS = {
     fontSize: { min: 6, max: 30, step: 1, label: 'Resolution' },
     contrast: { min: 0.5, max: 3.0, step: 0.1, label: 'Contrast' },
     brightness: { min: -100, max: 100, step: 1, label: 'Brightness' },
+    saturation: { min: 0, max: 200, step: 1, label: 'Saturation' },
 }
 
 function Settings({ settings, onChange, onSettingsSliderActiveChange }: SettingsCompProps) {
@@ -67,6 +68,7 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
     const formatValue = (key: string, value: number) => {
         if (key === 'contrast') return value.toFixed(1)
         if (key === 'brightness') return `${value > 0 ? '+' : ''}${value}`
+        if (key === 'saturation') return `${Math.round(value)}%`
         return `${value}px`
     }
 

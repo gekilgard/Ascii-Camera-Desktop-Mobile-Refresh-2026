@@ -3,6 +3,8 @@ export interface AsciiSettings {
     fontSize: number
     contrast: number
     brightness: number
+    /** 0 = grayscale … 100 = natural … 200 = stronger color (see adjustSaturationRgb). */
+    saturation: number
     colorMode: boolean
     invert: boolean
     characterSet: 'ascii' | 'dither' | 'solidBlocks' | 'matrix' | 'gek' | 'corporate'
@@ -11,16 +13,58 @@ export interface AsciiSettings {
 /** Slider + toggles applied when picking a filter (Resolution slider = fontSize). */
 export type FilterPresetValues = Pick<
     AsciiSettings,
-    'fontSize' | 'contrast' | 'brightness' | 'colorMode' | 'invert'
+    'fontSize' | 'contrast' | 'brightness' | 'saturation' | 'colorMode' | 'invert'
 >
 
 export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetValues> = {
-    ascii: { fontSize: 12, contrast: 1.8, brightness: 19, colorMode: false, invert: true },
-    dither: { fontSize: 17, contrast: 1.4, brightness: 30, colorMode: false, invert: false },
-    solidBlocks: { fontSize: 30, contrast: 1.1, brightness: -76, colorMode: true, invert: false },
-    matrix: { fontSize: 10, contrast: 1.1, brightness: -76, colorMode: true, invert: false },
-    gek: { fontSize: 13, contrast: 0.8, brightness: 5, colorMode: true, invert: true },
-    corporate: { fontSize: 20, contrast: 0.5, brightness: -100, colorMode: false, invert: false },
+    ascii: {
+        fontSize: 12,
+        contrast: 1.8,
+        brightness: 19,
+        saturation: 100,
+        colorMode: false,
+        invert: true,
+    },
+    dither: {
+        fontSize: 17,
+        contrast: 1.4,
+        brightness: 30,
+        saturation: 100,
+        colorMode: false,
+        invert: false,
+    },
+    solidBlocks: {
+        fontSize: 27,
+        contrast: 0.5,
+        brightness: 89,
+        saturation: 100,
+        colorMode: true,
+        invert: false,
+    },
+    matrix: {
+        fontSize: 10,
+        contrast: 1.1,
+        brightness: -76,
+        saturation: 100,
+        colorMode: true,
+        invert: false,
+    },
+    gek: {
+        fontSize: 13,
+        contrast: 0.8,
+        brightness: 5,
+        saturation: 100,
+        colorMode: true,
+        invert: true,
+    },
+    corporate: {
+        fontSize: 20,
+        contrast: 0.5,
+        brightness: -100,
+        saturation: 100,
+        colorMode: false,
+        invert: false,
+    },
 }
 
 export interface AsciiCharacterMap {

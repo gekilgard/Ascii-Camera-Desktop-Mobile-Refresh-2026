@@ -34,3 +34,22 @@ export const getChar = (brightness: number, map: string[], invert: boolean): str
 export const getLuminance = (r: number, g: number, b: number): number => {
     return 0.299 * r + 0.587 * g + 0.114 * b
 }
+
+/**
+ * Scale chroma relative to luminance. 100 = unchanged, 0 = grayscale, 200 = ~2× saturation.
+ */
+export const adjustSaturationRgb = (
+    r: number,
+    g: number,
+    b: number,
+    saturationPercent: number,
+): [number, number, number] => {
+    const t = saturationPercent / 100
+    const l = getLuminance(r, g, b)
+    const blend = (c: number) => l + (c - l) * t
+    return [
+        Math.max(0, Math.min(255, Math.round(blend(r)))),
+        Math.max(0, Math.min(255, Math.round(blend(g)))),
+        Math.max(0, Math.min(255, Math.round(blend(b)))),
+    ]
+}
