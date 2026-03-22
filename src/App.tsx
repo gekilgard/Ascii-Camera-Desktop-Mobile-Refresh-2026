@@ -262,7 +262,7 @@ function App() {
 
     return (
         <div
-            className={`h-screen w-screen overflow-hidden transition-colors duration-300 ${inverted ? 'bg-black' : 'bg-white'}`}
+            className={`h-[100dvh] min-h-[100dvh] w-full overflow-hidden transition-colors duration-300 ${inverted ? 'bg-black' : 'bg-white'}`}
         >
             <Header
                 fps={stats.fps}
@@ -315,7 +315,7 @@ function App() {
                 </div>
             )}
 
-            <div className="fixed inset-0 flex justify-center items-center">
+            <div className="fixed inset-0 z-0">
                 <AsciiView
                     ref={asciiRendererRef}
                     settings={settings}

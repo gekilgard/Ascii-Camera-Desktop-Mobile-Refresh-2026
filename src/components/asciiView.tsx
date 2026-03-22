@@ -316,10 +316,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                 const cssW = solidBlocks ? blockGrid!.cssW : srcW * fontScale
                 const cssH = solidBlocks ? blockGrid!.cssH : srcH * fontScale
-                canvas.width = cssW * dpr
-                canvas.height = cssH * dpr
-                canvas.style.width = `${cssW}px`
-                canvas.style.height = `${cssH}px`
+                const dispW = canvasSize.width
+                const dispH = canvasSize.height
+
+                canvas.width = dispW * dpr
+                canvas.height = dispH * dpr
+                canvas.style.width = `${dispW}px`
+                canvas.style.height = `${dispH}px`
 
                 const ctx = canvas.getContext('2d', { alpha: false })
                 if (!ctx) {
@@ -327,7 +330,10 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     return
                 }
 
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+                // Scale ASCII grid to fill viewport (removes letterboxing from fractional cells).
+                const sx = (dpr * dispW) / cssW
+                const sy = (dpr * dispH) / cssH
+                ctx.setTransform(sx, 0, 0, sy, 0, 0)
                 ctx.imageSmoothingEnabled = false
 
                 ctx.fillStyle = invert ? '#000000' : '#ffffff'
@@ -502,7 +508,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
         return (
             <>
-                <div className="h-screen w-screen -z-10 flex justify-center items-center">
+                <div className="pointer-events-none fixed inset-0 -z-10 block h-full w-full min-h-0 min-w-0">
                     <video
                         ref={videoRef}
                         height={'screen'}
@@ -516,7 +522,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         ref={canvasRef}
                         width={canvasSize.width}
                         height={canvasSize.height}
-                        className="bg-transparent -z-10"
+                        className="bg-transparent -z-10 block h-full w-full"
                     />
                 </div>
             </>
