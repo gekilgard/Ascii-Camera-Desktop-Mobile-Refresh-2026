@@ -1,125 +1,132 @@
 <div align="center">
-  <img src="public/assets/banner.png" alt="Project Logo" width="full">
-  
-  # Phosphor Cam
-  
+  <img src="public/assets/banner.png" alt="ASCII Cam Refreshed" width="full">
+
+  # ASCII Cam — Refreshed 2026
+
   <p align="center">
-    <i>Transform your camera feed into real-time ASCII art</i>
+    <i>Real-time ASCII camera: webcam or upload, filters, presets, and capture — in the browser.</i>
   </p>
 
-  [![GitHub stars](https://img.shields.io/github/stars/pshycodr/phosphor-cam?style=social)](https://github.com/pshycodr/phosphor-cam/stargazers)
-  [![GitHub forks](https://img.shields.io/github/forks/pshycodr/phosphor-cam?style=social)](https://github.com/pshycodr/phosphor-cam/network/members)
-  [![GitHub watchers](https://img.shields.io/github/watchers/pshycodr/phosphor-cam?style=social)](https://github.com/pshycodr/phosphor-cam/watchers)
-  
+  [![GitHub stars](https://img.shields.io/github/stars/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026?style=social)](https://github.com/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026?style=social)](https://github.com/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026/network/members)
   [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
   [![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-  
-  [![GitHub issues](https://img.shields.io/github/issues/pshycodr/phosphor-cam)](https://github.com/pshycodr/phosphor-cam/issues)
-  [![GitHub pull requests](https://img.shields.io/github/issues-pr/pshycodr/phosphor-cam)](https://github.com/pshycodr/phosphor-cam/pulls)
-  [![Last commit](https://img.shields.io/github/last-commit/pshycodr/phosphor-cam)](https://github.com/pshycodr/phosphor-cam/commits/main)
 
 </div>
 
 ---
 
-## ✨ Features
+## About this project
 
-- **Real-Time Rendering** – Live ASCII conversion with performance optimization (60+ FPS)
-- **High-Quality Capture** – Export 4K resolution ASCII art images
-- **Customizable Settings**
-  - Filters (ASCII, dither, solid blocks, matrix, gek, corporate) with per-filter presets
-  - Adjustable font size/resolution (6-30px)
-  - Contrast and brightness controls
-  - Color mode and invert options
-- **Camera Controls**
-  - Front/back camera switching
-  - High-quality snapshot export
-  - ASCII text copy to clipboard
-  - Video recording capability
-- **Performance Monitoring** – Real-time FPS and render time display
+**ASCII Cam Refreshed 2026** is my **first coding project**. I started experimenting with it back in **2022** and have kept iterating since — this repo is the **2026 refresh**: desktop and mobile layout, filters, per-filter presets, upload mode, recording, and a UI pass built around how I actually use it.
 
-## 📸 Demo
+The idea has deep roots in two open-source projects I learned from and drew inspiration from:
+
+- **[idevelop/ascii-camera](https://github.com/idevelop/ascii-camera)** — Andrei Gheorghe’s classic getUserMedia → ASCII webcam demo (MIT).
+- **[pshycodr/phosphor-cam](https://github.com/pshycodr/phosphor-cam)** — A modern React + Canvas take on the same idea (MIT).
+
+This fork is **not** a thin reskin: there’s a lot of custom rendering, settings, presets, and product decisions layered on top of that lineage. Upstream licenses remain in [LICENSE](LICENSE); see **Credits** below.
+
+### Author & attribution
+
+**Maintainer:** **Grant Kilgard** — [@gekilgard](https://github.com/gekilgard)
+
+I own the direction, features, and ongoing work on **this repository**. Development sometimes uses editors and assistants; they are **tools**, not co-authors. For GitHub’s contributor graph, commits should attribute to **me**: use your verified GitHub email in git, and add any secondary commit emails under [GitHub → Settings → Emails](https://github.com/settings/emails) so they count toward your profile. Optionally use a [`.mailmap`](https://git-scm.com/docs/gitmailmap) (see `.mailmap.example` in this repo) to normalize local history display.
+
+---
+
+## Features
+
+- **Real-time rendering** — Live ASCII conversion with solid FPS on modern devices
+- **Capture** — High-resolution PNG export from the canvas
+- **Filters & presets** — ASCII, dither, solid blocks, matrix, gek, corporate; each filter snaps sliders + toggles to tuned defaults
+- **Adjustments** — Resolution (cell size), contrast, brightness, color mode, invert
+- **Camera & media** — Front/back camera, photo / video / **upload** (image or video)
+- **Recording** — Record the ASCII canvas via `captureStream`
+- **Performance readout** — FPS and render time (optional; can fade during slider drag)
+
+---
+
+## Demo
 
 <div align="center">
-  <img src="public/demo/blocks-color.png" alt="ASCII Camera Demo 1" width="45%">
-  <img src="public/demo/standrad.png" alt="ASCII Camera Demo 2" width="45%">
+  <img src="public/demo/blocks-color.png" alt="ASCII camera demo — solid blocks" width="45%">
+  <img src="public/demo/standrad.png" alt="ASCII camera demo" width="45%">
 </div>
 
-## 🚀 Quick Start
+---
+
+## Quick start
 
 ```bash
-# Clone the repository
-git clone https://github.com/pshycodr/phosphor-cam.git
-cd phosphor-cam
-
-# Install dependencies
+git clone https://github.com/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026.git
+cd Ascii-Camera-Desktop-Mobile-Refresh-2026
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Visit `http://localhost:5173` to see the app in action!
+Open the URL Vite prints (usually `http://localhost:5173`).
 
-## 📖 Usage
+```bash
+npm run build   # production build
+npm run preview # serve dist locally
+```
 
-1. **Grant Camera Access** – Allow browser to access your camera when prompted
-2. **Adjust Settings** – Click the settings icon (⚙️) to customize the ASCII effect
-3. **Capture Images** – Press the shutter button for high-quality exports
-4. **Switch Cameras** – Use the flip button (🔄) to toggle between front/back cameras
-5. **Record Video** (COMMING SOON) – Click the record button (📹) to start/stop video capture
+---
 
-## 🛠️ Tech Stack
+## Usage
 
-- **React 18** – UI framework
-- **TypeScript** – Type safety
-- **Vite** – Build tool
-- **Canvas API** – Real-time rendering
-- **MediaStream API** – Camera access
-- **Tailwind CSS** – Styling
-- **Lucide React** – Icons
+1. Allow **camera** (or choose **Upload** and pick a file).
+2. Open **settings** (top-right) to change **filter**, sliders, color, and invert.
+3. **Shutter** — save a still; **flip** — switch cameras; **video** — record from the ASCII view.
 
-## 🌐 Browser Support
+---
 
-Requires a modern browser with support for:
-- `getUserMedia` API
-- `Canvas 2D` rendering context
-- ES6+ JavaScript features
+## Tech stack
 
-✅ Chrome 90+ | ✅ Firefox 88+ | ✅ Safari 14+ | ✅ Edge 90+
+- React · TypeScript · Vite  
+- Canvas 2D + `getUserMedia` / `MediaRecorder`  
+- Tailwind CSS · Lucide / React Icons  
 
-## 📝 License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Browser support
 
-## 🤝 Contributing
+Needs a current browser with `getUserMedia`, Canvas 2D, and modern JS.
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Chrome · Firefox · Safari · Edge (recent versions).
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+---
 
-## ⭐ Show Your Support
+## Credits
 
-If you found this project helpful, please consider giving it a star! It helps others discover the project.
+| Project | Author / maintainer | Role here |
+|--------|----------------------|-----------|
+| [ascii-camera](https://github.com/idevelop/ascii-camera) | Andrei Gheorghe | Early inspiration — webcam → ASCII in the browser |
+| [phosphor-cam](https://github.com/pshycodr/phosphor-cam) | Anish Roy (upstream MIT) | React/TS/Vite base this refresh grew from |
 
-[![Star this repo](https://img.shields.io/github/stars/pshycodr/phosphor-cam?style=social)](https://github.com/pshycodr/phosphor-cam)
+**This fork:** **Grant Kilgard** ([@gekilgard](https://github.com/gekilgard)).
 
-## 📬 Contact
+---
 
-Have questions or suggestions? Open an issue or reach out!
+## License
+
+MIT — see [LICENSE](LICENSE). Upstream copyright notices from bundled lineage apply where noted.
+
+---
+
+## Contributing
+
+Issues and PRs welcome. For larger changes, open an issue first.
 
 ---
 
 <div align="center">
-  Made with ❤️ using React and Canvas API
-  
-  [Report Bug](https://github.com/pshycodr/phosphor-cam/issues) · [Request Feature](https://github.com/pshycodr/phosphor-cam/issues)
+
+**ASCII Cam Refreshed 2026** · Grant Kilgard ([@gekilgard](https://github.com/gekilgard))
+
+[Report an issue](https://github.com/gekilgard/Ascii-Camera-Desktop-Mobile-Refresh-2026/issues)
+
 </div>
-
-

@@ -1,0 +1,10 @@
+# Optional: copy to ".mailmap" in the repo root to normalize author lines in `git log` / `git shortlog`.
+# GitHub’s contribution graph uses commit author emails — add every email you commit with
+# (including any IDE/agent noreply addresses) at https://github.com/settings/emails
+#
+# Format (see https://git-scm.com/docs/gitmailmap):
+#   Proper Name <proper@email> <commit@email>
+#
+# Example (replace with your real verified GitHub email and any secondary commit emails):
+# Grant Kilgard <you@example.com> <you@example.com>
+# Grant Kilgard <you@example.com> <old-or-agent@users.noreply.github.com>
