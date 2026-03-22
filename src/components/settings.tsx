@@ -122,9 +122,9 @@ function Settings({ settings, onChange }: SettingsCompProps) {
 
             <aside
                 className={`fixed top-0 right-0 h-full w-64 bg-black/80 backdrop-blur-md flex flex-col
-        transform transition-transform duration-300 z-40
+        transform transition-all duration-300 z-40 ease-out
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        ${activeSlider ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        ${activeSlider ? 'opacity-35 pointer-events-none' : 'opacity-100'}`}
             >
                 <header className="flex items-center py-5 px-5 border-b border-white/8">
                     <span className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-light">
