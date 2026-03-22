@@ -21,6 +21,13 @@ const BAYER_4X4 = [
 ]
 
 const isDitherMode = (charSet: string) => charSet === 'dither'
+const isBlocksMode = (charSet: string) => charSet === 'blocks'
+
+/** Quantize 0–255 into 5 solid levels (matches ░▒▓█ ladder as flat fills, not font stipple). */
+const quantizeBlockLevel = (l: number): number => {
+    const step = Math.round((l / 255) * 4)
+    return Math.round((step / 4) * 255)
+}
 
 const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
     ({ settings, stream, uploadedMedia, onStatsUpdate, canvasSize }, ref) => {
@@ -99,10 +106,12 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                 const brightnessMap = createBrightnessMap(ramp)
                 const dither = isDitherMode(settings.characterSet)
+                const blocks = isBlocksMode(settings.characterSet)
+                const fs = imageSpecs.fontSize
 
                 for (let i = 0; i < charsX * charsY; i++) {
-                    const xPos = (i % charsX) * imageSpecs.fontSize
-                    const yPos = Math.floor(i / charsX) * imageSpecs.fontSize
+                    const xPos = (i % charsX) * fs
+                    const yPos = Math.floor(i / charsX) * fs
 
                     const r = pixels[i * 4]
                     const g = pixels[i * 4 + 1]
@@ -110,6 +119,20 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                     let l = getLuminance(r, g, b)
                     l = adjustColor(l, settings.contrast, settings.brightness)
+
+                    if (blocks) {
+                        if (settings.colorMode) {
+                            const ra = adjustColor(r, settings.contrast, settings.brightness)
+                            const ga = adjustColor(g, settings.contrast, settings.brightness)
+                            const ba = adjustColor(b, settings.contrast, settings.brightness)
+                            tempCtx.fillStyle = `rgb(${Math.round(ra)},${Math.round(ga)},${Math.round(ba)})`
+                        } else {
+                            const q = quantizeBlockLevel(settings.invert ? 255 - l : l)
+                            tempCtx.fillStyle = `rgb(${q},${q},${q})`
+                        }
+                        tempCtx.fillRect(xPos, yPos, fs, fs)
+                        continue
+                    }
 
                     let char: string
                     if (dither) {
@@ -239,6 +262,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const brightnessMap = createBrightnessMap(ramp)
                 const { contrast, brightness: brightnessOffset, colorMode, invert } = settings
                 const dither = isDitherMode(settings.characterSet)
+                const blocks = isBlocksMode(settings.characterSet)
 
                 const cssW = srcW * fontScale
                 const cssH = srcH * fontScale
@@ -303,6 +327,33 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         }
 
                         ctx.fillText(char, x, y)
+                    }
+                } else if (blocks) {
+                    if (prevFrameRef.current) prevFrameRef.current = null
+
+                    for (let i = 0; i < pixelCount; i++) {
+                        const r = pixels[i * 4]
+                        const g = pixels[i * 4 + 1]
+                        const b = pixels[i * 4 + 2]
+
+                        let l = 0.299 * r + 0.587 * g + 0.114 * b
+                        if (contrast !== 1.0 || brightnessOffset !== 0) {
+                            l = adjustColor(l, contrast, brightnessOffset)
+                        }
+
+                        const x = (i % srcW) * fontScale
+                        const y = Math.floor(i / srcW) * fontScale
+
+                        if (colorMode) {
+                            const ra = adjustColor(r, contrast, brightnessOffset)
+                            const ga = adjustColor(g, contrast, brightnessOffset)
+                            const ba = adjustColor(b, contrast, brightnessOffset)
+                            ctx.fillStyle = `rgb(${Math.round(ra)},${Math.round(ga)},${Math.round(ba)})`
+                        } else {
+                            const q = quantizeBlockLevel(invert ? 255 - l : l)
+                            ctx.fillStyle = `rgb(${q},${q},${q})`
+                        }
+                        ctx.fillRect(x, y, fontScale, fontScale)
                     }
                 } else {
                     if (prevFrameRef.current) prevFrameRef.current = null
