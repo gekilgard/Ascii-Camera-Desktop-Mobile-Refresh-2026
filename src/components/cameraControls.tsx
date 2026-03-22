@@ -4,6 +4,8 @@ import { memo, useRef, useState } from 'react'
 export type AppMode = 'photo' | 'video' | 'upload'
 
 type CameraControlsProps = {
+    /** Hide bottom bar while dragging a settings slider. */
+    hidden?: boolean
     mode: AppMode
     onModeChange: (mode: AppMode) => void
     onFlip: () => void
@@ -19,6 +21,7 @@ type CameraControlsProps = {
 }
 
 const CameraControls = ({
+    hidden,
     mode,
     onModeChange,
     onFlip,
@@ -34,6 +37,8 @@ const CameraControls = ({
     const [isFlipping, setIsFlipping] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    if (hidden) return null
 
     const handleFlip = () => {
         setIsFlipping(prev => !prev)

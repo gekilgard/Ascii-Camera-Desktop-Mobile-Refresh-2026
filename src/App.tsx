@@ -37,6 +37,7 @@ function App() {
     const [recordingTime, setRecordingTime] = useState(0)
     const [error, setError] = useState<string | null>(null)
     const [mode, setMode] = useState<AppMode>('photo')
+    const [settingsSliderActive, setSettingsSliderActive] = useState(false)
     const [uploadedMedia, setUploadedMedia] = useState<HTMLImageElement | HTMLVideoElement | null>(
         null,
     )
@@ -272,9 +273,15 @@ function App() {
                 width={windowSize.width}
                 height={windowSize.height}
                 inverted={inverted}
+                hidden={settingsSliderActive}
             />
 
-            <Settings settings={settings} onChange={setSettings} inverted={inverted} />
+            <Settings
+                settings={settings}
+                onChange={setSettings}
+                inverted={inverted}
+                onSettingsSliderActiveChange={setSettingsSliderActive}
+            />
 
             {flash && (
                 <div
@@ -323,6 +330,7 @@ function App() {
             </div>
 
             <CameraControls
+                hidden={settingsSliderActive}
                 mode={mode}
                 onModeChange={handleModeChange}
                 onFlip={toggleCamera}

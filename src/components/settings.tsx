@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, X } from 'lucide-react'
 import { AsciiSettings, CHARACTER_SET_OPTIONS } from '../types/types'
 
@@ -6,6 +6,8 @@ interface SettingsCompProps {
     settings: AsciiSettings
     onChange: (newSettings: AsciiSettings) => void
     inverted: boolean
+    /** True while dragging a settings slider — parent hides header / bottom chrome. */
+    onSettingsSliderActiveChange?: (active: boolean) => void
 }
 
 type SliderEvent = React.MouseEvent | React.TouchEvent
@@ -16,7 +18,7 @@ const SLIDER_CONFIGS = {
     brightness: { min: -100, max: 100, step: 1, label: 'Brightness' },
 }
 
-function Settings({ settings, onChange }: SettingsCompProps) {
+function Settings({ settings, onChange, onSettingsSliderActiveChange }: SettingsCompProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [activeSlider, setActiveSlider] = useState<string | null>(null)
     const [sliderValue, setSliderValue] = useState<number>(0)
@@ -32,11 +34,28 @@ function Settings({ settings, onChange }: SettingsCompProps) {
         y: 'touches' in e ? e.touches[0].clientY : e.clientY,
     })
 
+    const endSliderDrag = useCallback(() => {
+        setActiveSlider(null)
+        onSettingsSliderActiveChange?.(false)
+    }, [onSettingsSliderActiveChange])
+
+    useEffect(() => {
+        if (!activeSlider) return
+        const onGlobalEnd = () => endSliderDrag()
+        window.addEventListener('pointerup', onGlobalEnd)
+        window.addEventListener('touchend', onGlobalEnd)
+        return () => {
+            window.removeEventListener('pointerup', onGlobalEnd)
+            window.removeEventListener('touchend', onGlobalEnd)
+        }
+    }, [activeSlider, endSliderDrag])
+
     const handleSliderStart = (key: string, value: number, e: SliderEvent) => {
         setSliderRect((e.currentTarget as HTMLInputElement).getBoundingClientRect())
         setActiveSlider(key)
         setSliderValue(value)
         setSliderPosition(getClientPos(e))
+        onSettingsSliderActiveChange?.(true)
     }
 
     const handleSliderChange = (key: string, val: number, e: SliderEvent) => {
@@ -77,8 +96,8 @@ function Settings({ settings, onChange }: SettingsCompProps) {
                     onChange={e =>
                         handleSliderChange(key, +e.target.value, e as unknown as SliderEvent)
                     }
-                    onMouseUp={() => setActiveSlider(null)}
-                    onTouchEnd={() => setActiveSlider(null)}
+                    onMouseUp={endSliderDrag}
+                    onTouchEnd={endSliderDrag}
                     className="settings-slider"
                 />
             </section>
@@ -121,68 +140,77 @@ function Settings({ settings, onChange }: SettingsCompProps) {
             )}
 
             <aside
-                className={`fixed top-0 right-0 h-full w-64 bg-black/80 backdrop-blur-md flex flex-col
-        transform transition-all duration-300 z-40 ease-out
+                className={`fixed top-0 right-0 z-40 flex h-full w-64 flex-col transform transition-transform duration-300 ease-out
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        ${activeSlider ? 'opacity-35 pointer-events-none' : 'opacity-100'}`}
+        ${activeSlider ? 'pointer-events-none' : ''}`}
             >
-                <header className="flex items-center py-5 px-5 border-b border-white/8">
-                    <span className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-light">
-                        Settings
-                    </span>
-                </header>
-
-                <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
-                    {(Object.keys(SLIDER_CONFIGS) as Array<keyof typeof SLIDER_CONFIGS>).map(
-                        renderSlider,
-                    )}
-
-                    <div className="border-t border-white/8 pt-6">
-                        <span className="text-[10px] tracking-[0.15em] uppercase text-white/40 block mb-3">
-                            Characters
+                <div
+                    className={`pointer-events-none absolute inset-0 transition-[background-color,backdrop-filter] duration-200 ease-out ${
+                        activeSlider
+                            ? 'bg-black/25 backdrop-blur-sm'
+                            : 'bg-black/80 backdrop-blur-md'
+                    }`}
+                    aria-hidden
+                />
+                <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+                    <header className="flex shrink-0 items-center border-b border-white/8 px-5 py-5">
+                        <span className="text-[10px] font-light uppercase tracking-[0.2em] text-white/50">
+                            Settings
                         </span>
-                        <div className="flex flex-col gap-0.5">
-                            {CHARACTER_SET_OPTIONS.map(({ id, label }) => (
-                                <button
-                                    key={id}
-                                    className={`text-left py-2 px-2 rounded text-[10px] tracking-[0.1em] uppercase font-light transition-colors ${
-                                        settings.characterSet === id
-                                            ? 'text-white bg-white/10'
-                                            : 'text-white/40 hover:text-white/70'
-                                    }`}
-                                    onClick={() => handleChange('characterSet', id)}
+                    </header>
+
+                    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6">
+                        {(Object.keys(SLIDER_CONFIGS) as Array<keyof typeof SLIDER_CONFIGS>).map(
+                            renderSlider,
+                        )}
+
+                        <div className="border-t border-white/8 pt-6">
+                            <span className="text-[10px] tracking-[0.15em] uppercase text-white/40 block mb-3">
+                                Characters
+                            </span>
+                            <div className="flex flex-col gap-0.5">
+                                {CHARACTER_SET_OPTIONS.map(({ id, label }) => (
+                                    <button
+                                        key={id}
+                                        className={`text-left py-2 px-2 rounded text-[10px] tracking-[0.1em] uppercase font-light transition-colors ${
+                                            settings.characterSet === id
+                                                ? 'text-white bg-white/10'
+                                                : 'text-white/40 hover:text-white/70'
+                                        }`}
+                                        onClick={() => handleChange('characterSet', id)}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="border-t border-white/8 pt-6 space-y-1">
+                            {[
+                                { key: 'colorMode', label: 'Color' },
+                                { key: 'invert', label: 'Invert' },
+                            ].map(({ key, label }) => (
+                                <label
+                                    key={key}
+                                    className="flex justify-between items-center py-2 px-2 rounded cursor-pointer hover:bg-white/5 transition-colors"
                                 >
-                                    {label}
-                                </button>
+                                    <span className="text-[10px] tracking-[0.15em] uppercase text-white/50 font-light">
+                                        {label}
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings[key as keyof AsciiSettings] as boolean}
+                                        onChange={() =>
+                                            handleChange(
+                                                key as keyof AsciiSettings,
+                                                !settings[key as keyof AsciiSettings],
+                                            )
+                                        }
+                                        className="settings-toggle"
+                                    />
+                                </label>
                             ))}
                         </div>
-                    </div>
-
-                    <div className="border-t border-white/8 pt-6 space-y-1">
-                        {[
-                            { key: 'colorMode', label: 'Color' },
-                            { key: 'invert', label: 'Invert' },
-                        ].map(({ key, label }) => (
-                            <label
-                                key={key}
-                                className="flex justify-between items-center py-2 px-2 rounded cursor-pointer hover:bg-white/5 transition-colors"
-                            >
-                                <span className="text-[10px] tracking-[0.15em] uppercase text-white/50 font-light">
-                                    {label}
-                                </span>
-                                <input
-                                    type="checkbox"
-                                    checked={settings[key as keyof AsciiSettings] as boolean}
-                                    onChange={() =>
-                                        handleChange(
-                                            key as keyof AsciiSettings,
-                                            !settings[key as keyof AsciiSettings],
-                                        )
-                                    }
-                                    className="settings-toggle"
-                                />
-                            </label>
-                        ))}
                     </div>
                 </div>
             </aside>
@@ -209,8 +237,8 @@ function Settings({ settings, onChange }: SettingsCompProps) {
                                 e as unknown as SliderEvent,
                             )
                         }
-                        onMouseUp={() => setActiveSlider(null)}
-                        onTouchEnd={() => setActiveSlider(null)}
+                        onMouseUp={endSliderDrag}
+                        onTouchEnd={endSliderDrag}
                         className="settings-slider w-full"
                     />
                 </div>

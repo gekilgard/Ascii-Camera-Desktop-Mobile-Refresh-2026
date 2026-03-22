@@ -5,9 +5,13 @@ interface HeaderProps extends ProcessingStats {
     width: number
     height: number
     inverted: boolean
+    /** Hide stats while dragging a settings slider. */
+    hidden?: boolean
 }
 
-function Header({ fps, renderTime, width, height }: HeaderProps) {
+function Header({ fps, renderTime, width, height, hidden }: HeaderProps) {
+    if (hidden) return null
+
     return (
         <div className="fixed top-4 left-4 z-10">
             <div className="flex gap-4 text-[10px] tracking-[0.15em] uppercase font-light text-white/80 bg-black/60 backdrop-blur-sm px-3 py-2 rounded">
