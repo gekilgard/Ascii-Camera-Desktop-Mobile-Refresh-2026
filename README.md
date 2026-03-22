@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="public/assets/banner.png" alt="ASCII Cam Refreshed" width="full">
 
   # ASCII Cam — Refreshed 2026
 
