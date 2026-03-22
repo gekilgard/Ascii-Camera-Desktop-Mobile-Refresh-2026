@@ -69,13 +69,11 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
         const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
         const lastTimeRef = useRef<number>(0)
         const animationIdRef = useRef<number | null>(null)
-        const prevFrameRef = useRef<Float32Array | null>(null)
         const frameCountRef = useRef(0)
 
         const ramp = CHAR_SETS[settings.characterSet]
 
         const DITHER_CHARS = [' ', '·', ':', '░', '▒', '▓', '█']
-        const TRAIL_BLEND = 0.25
 
         const getDrawSource = useCallback((): HTMLImageElement | HTMLVideoElement | null => {
             if (uploadedMedia) return uploadedMedia
@@ -372,13 +370,6 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 frameCountRef.current++
 
                 if (dither) {
-                    const needNewBuffer =
-                        !prevFrameRef.current || prevFrameRef.current.length !== pixelCount
-                    if (needNewBuffer) {
-                        prevFrameRef.current = new Float32Array(pixelCount)
-                    }
-                    const prevFrame = prevFrameRef.current!
-
                     for (let i = 0; i < pixelCount; i++) {
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
@@ -396,14 +387,11 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             l = adjustColor(l, contrast, brightnessOffset)
                         }
 
-                        const blended = prevFrame[i] * TRAIL_BLEND + l * (1 - TRAIL_BLEND)
-                        prevFrame[i] = blended
-
                         const bx = (i % srcW) % 4
                         const by = Math.floor(i / srcW) % 4
                         const threshold = (BAYER_4X4[by][bx] / 16) * 255
-                        const val = invert ? 255 - blended : blended
-                        const dithered = val > threshold ? blended : 0
+                        const val = invert ? 255 - l : l
+                        const dithered = val > threshold ? l : 0
                         const idx = Math.floor((dithered / 255) * (DITHER_CHARS.length - 1))
                         const char = DITHER_CHARS[Math.min(idx, DITHER_CHARS.length - 1)]
 
@@ -413,7 +401,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         if (colorMode) {
                             ctx.fillStyle =
                                 settings.characterSet === 'matrix'
-                                    ? matrixGreenFromLuma(blended, invert)
+                                    ? matrixGreenFromLuma(l, invert)
                                     : `rgb(${rs},${gs},${bs})`
                         } else {
                             ctx.fillStyle = getMonochromeForeground(settings.characterSet, invert)
@@ -422,8 +410,6 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         ctx.fillText(char, x, y)
                     }
                 } else if (solidBlocks) {
-                    if (prevFrameRef.current) prevFrameRef.current = null
-
                     for (let i = 0; i < pixelCount; i++) {
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
@@ -456,8 +442,6 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         ctx.fillRect(x, y, cellSize, cellSize)
                     }
                 } else {
-                    if (prevFrameRef.current) prevFrameRef.current = null
-
                     for (let i = 0; i < pixelCount; i++) {
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
