@@ -49,7 +49,10 @@ const CameraControls = ({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
-        if (file) onFileUpload(file)
+        if (file) {
+            onModeChange('upload')
+            onFileUpload(file)
+        }
         e.target.value = ''
     }
 
@@ -184,7 +187,13 @@ const CameraControls = ({
                     <span key={m} className="flex items-center gap-4">
                         {i > 0 && <span className="text-white/20 text-[9px]">/</span>}
                         <button
-                            onClick={() => onModeChange(m)}
+                            onClick={() => {
+                                if (m === 'upload') {
+                                    fileInputRef.current?.click()
+                                } else {
+                                    onModeChange(m)
+                                }
+                            }}
                             className={`text-[9px] tracking-[0.2em] uppercase font-light transition-colors ${
                                 mode === m ? 'text-white' : 'text-white/40 hover:text-white/70'
                             }`}
