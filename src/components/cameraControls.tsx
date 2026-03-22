@@ -38,8 +38,6 @@ const CameraControls = ({
     const [isSaved, setIsSaved] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    if (hidden) return null
-
     const handleFlip = () => {
         setIsFlipping(prev => !prev)
         onFlip()
@@ -62,7 +60,12 @@ const CameraControls = ({
     }
 
     return (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center pb-8 md:pb-10 gap-4">
+        <div
+            className={`fixed inset-x-0 bottom-0 flex flex-col items-center pb-8 md:pb-10 gap-4 transition-opacity duration-500 ease-in-out ${
+                hidden ? 'pointer-events-none opacity-0' : 'pointer-events-none opacity-100'
+            }`}
+            aria-hidden={hidden}
+        >
             {isRecording && (
                 <div className="pointer-events-none text-[10px] tracking-[0.2em] uppercase font-light tabular-nums text-white bg-black/60 backdrop-blur-sm px-3 py-1 rounded">
                     {formatTime(recordingTime)}
@@ -77,7 +80,9 @@ const CameraControls = ({
                 onChange={handleFileChange}
             />
 
-            <div className="pointer-events-auto flex items-center gap-6 md:gap-8">
+            <div
+                className={`flex items-center gap-6 md:gap-8 ${hidden ? 'pointer-events-none' : 'pointer-events-auto'}`}
+            >
                 {mode !== 'upload' && (
                     <button
                         onClick={handleFlip}
@@ -187,7 +192,11 @@ const CameraControls = ({
                 )}
             </div>
 
-            <div className="pointer-events-auto flex items-center gap-4 bg-black/60 backdrop-blur-sm px-4 py-1.5 rounded-full">
+            <div
+                className={`flex items-center gap-4 bg-black/60 backdrop-blur-sm px-4 py-1.5 rounded-full ${
+                    hidden ? 'pointer-events-none' : 'pointer-events-auto'
+                }`}
+            >
                 {(['photo', 'video', 'upload'] as const).map((m, i) => (
                     <span key={m} className="flex items-center gap-4">
                         {i > 0 && <span className="text-white/20 text-[9px]">/</span>}

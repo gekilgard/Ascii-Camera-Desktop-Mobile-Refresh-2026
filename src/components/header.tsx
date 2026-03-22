@@ -10,10 +10,13 @@ interface HeaderProps extends ProcessingStats {
 }
 
 function Header({ fps, renderTime, width, height, hidden }: HeaderProps) {
-    if (hidden) return null
-
     return (
-        <div className="fixed top-4 left-4 z-10">
+        <div
+            className={`fixed top-4 left-4 z-10 transition-opacity duration-500 ease-in-out ${
+                hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
+            }`}
+            aria-hidden={hidden}
+        >
             <div className="flex gap-4 text-[10px] tracking-[0.15em] uppercase font-light text-white/80 bg-black/60 backdrop-blur-sm px-3 py-2 rounded">
                 <span className="flex items-center gap-1.5">
                     <span className="text-white/40">FPS</span>

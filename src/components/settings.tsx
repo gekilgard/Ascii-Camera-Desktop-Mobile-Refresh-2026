@@ -23,7 +23,6 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
     const [activeSlider, setActiveSlider] = useState<string | null>(null)
     const [sliderValue, setSliderValue] = useState<number>(0)
     const [sliderPosition, setSliderPosition] = useState({ x: 0, y: 0 })
-    const [sliderRect, setSliderRect] = useState<DOMRect | null>(null)
 
     const handleChange = (key: keyof AsciiSettings, value: number | string | boolean) => {
         onChange({ ...settings, [key]: value })
@@ -51,7 +50,6 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
     }, [activeSlider, endSliderDrag])
 
     const handleSliderStart = (key: string, value: number, e: SliderEvent) => {
-        setSliderRect((e.currentTarget as HTMLInputElement).getBoundingClientRect())
         setActiveSlider(key)
         setSliderValue(value)
         setSliderPosition(getClientPos(e))
@@ -141,8 +139,7 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
 
             <aside
                 className={`fixed top-0 right-0 z-40 flex h-full w-64 flex-col transform transition-transform duration-300 ease-out
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        ${activeSlider ? 'pointer-events-none' : ''}`}
+        ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div
                     className={`pointer-events-none absolute inset-0 transition-[background-color,backdrop-filter] duration-200 ease-out ${
@@ -214,35 +211,6 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
                     </div>
                 </div>
             </aside>
-
-            {activeSlider && sliderRect && (
-                <div
-                    className="fixed z-50"
-                    style={{
-                        left: `${sliderRect.left}px`,
-                        top: `${sliderRect.top}px`,
-                        width: `${sliderRect.width}px`,
-                    }}
-                >
-                    <input
-                        type="range"
-                        min={SLIDER_CONFIGS[activeSlider as keyof typeof SLIDER_CONFIGS].min}
-                        max={SLIDER_CONFIGS[activeSlider as keyof typeof SLIDER_CONFIGS].max}
-                        step={SLIDER_CONFIGS[activeSlider as keyof typeof SLIDER_CONFIGS].step}
-                        value={sliderValue}
-                        onChange={e =>
-                            handleSliderChange(
-                                activeSlider,
-                                +e.target.value,
-                                e as unknown as SliderEvent,
-                            )
-                        }
-                        onMouseUp={endSliderDrag}
-                        onTouchEnd={endSliderDrag}
-                        className="settings-slider w-full"
-                    />
-                </div>
-            )}
         </>
     )
 }
