@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, X } from 'lucide-react'
-import { AsciiSettings, CHARACTER_SET_OPTIONS } from '../types/types'
+import { AsciiSettings, CHARACTER_SET_OPTIONS, FILTER_PRESETS } from '../types/types'
 
 interface SettingsCompProps {
     settings: AsciiSettings
@@ -162,19 +162,26 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
                         )}
 
                         <div className="border-t border-white/8 pt-6">
-                            <span className="text-[10px] tracking-[0.15em] uppercase text-white/40 block mb-3">
-                                Characters
+                            <span className="mb-3 block text-[10px] font-light uppercase tracking-[0.15em] text-white/40">
+                                Filter
                             </span>
                             <div className="flex flex-col gap-0.5">
                                 {CHARACTER_SET_OPTIONS.map(({ id, label }) => (
                                     <button
                                         key={id}
-                                        className={`text-left py-2 px-2 rounded text-[10px] tracking-[0.1em] uppercase font-light transition-colors ${
+                                        className={`rounded px-2 py-2 text-left text-[10px] font-light uppercase tracking-[0.1em] transition-colors ${
                                             settings.characterSet === id
-                                                ? 'text-white bg-white/10'
+                                                ? 'bg-white/10 text-white'
                                                 : 'text-white/40 hover:text-white/70'
                                         }`}
-                                        onClick={() => handleChange('characterSet', id)}
+                                        onClick={() => {
+                                            const preset = FILTER_PRESETS[id]
+                                            onChange({
+                                                ...settings,
+                                                characterSet: id,
+                                                ...preset,
+                                            })
+                                        }}
                                     >
                                         {label}
                                     </button>

@@ -6,6 +6,7 @@ import {
     AsciiRendererHandle,
     AsciiSettings,
     CameraFacingMode,
+    FILTER_PRESETS,
     ProcessingStats,
 } from './types/types'
 import CameraControls, { AppMode } from './components/cameraControls'
@@ -15,12 +16,8 @@ import { getSupportedMediaRecorderMimeType } from './utils/mediaRecorder'
 function App() {
     const DEFAULT_SETTIGNS: AsciiSettings = {
         resolution: 0.2,
-        fontSize: 10,
-        contrast: 1.2,
-        brightness: 0,
-        colorMode: false,
-        invert: false,
-        characterSet: 'standard',
+        ...FILTER_PRESETS.ascii,
+        characterSet: 'ascii',
     }
 
     const [stream, setStream] = useState<MediaStream | null>(null)

@@ -29,7 +29,7 @@
 - **Real-Time Rendering** – Live ASCII conversion with performance optimization (60+ FPS)
 - **High-Quality Capture** – Export 4K resolution ASCII art images
 - **Customizable Settings**
-  - 5 character sets (standard, simple, blocks, matrix, edges)
+  - Filters (ASCII, dither, solid blocks, matrix, gek, corporate) with per-filter presets
   - Adjustable font size/resolution (6-30px)
   - Contrast and brightness controls
   - Color mode and invert options
