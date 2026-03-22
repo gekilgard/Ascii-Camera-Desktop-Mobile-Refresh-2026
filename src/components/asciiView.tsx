@@ -21,12 +21,39 @@ const BAYER_4X4 = [
 ]
 
 const isDitherMode = (charSet: string) => charSet === 'dither'
-const isBlocksMode = (charSet: string) => charSet === 'blocks'
+const isSolidBlocksMode = (charSet: string) => charSet === 'solidBlocks'
 
-/** Quantize 0–255 into 5 solid levels (matches ░▒▓█ ladder as flat fills, not font stipple). */
+/** Quantize 0–255 into 5 solid levels for mosaic tiles. */
 const quantizeBlockLevel = (l: number): number => {
     const step = Math.round((l / 255) * 4)
     return Math.round((step / 4) * 255)
+}
+
+/** True square cells that tile the viewport (no skinny rects from W/H mismatch). */
+function squareBlockGrid(
+    canvasW: number,
+    canvasH: number,
+    targetCell: number,
+): { cols: number; rows: number; cell: number; cssW: number; cssH: number } {
+    const cols = Math.max(1, Math.floor(canvasW / targetCell))
+    const rows = Math.max(1, Math.floor(canvasH / targetCell))
+    const cell = Math.floor(Math.min(canvasW / cols, canvasH / rows))
+    return { cols, rows, cell, cssW: cols * cell, cssH: rows * cell }
+}
+
+function getMonochromeForeground(
+    characterSet: AsciiSettings['characterSet'],
+    invert: boolean,
+): string {
+    if (characterSet === 'matrix') return invert ? '#14532d' : '#00ff00'
+    return invert ? '#ffffff' : '#000000'
+}
+
+/** Matrix look: characters use green channel only (grayscale luma → G). */
+function matrixGreenFromLuma(l: number, invert: boolean): string {
+    const v = Math.max(0, Math.min(255, Math.round(l)))
+    const g = invert ? Math.round(v * 0.35) : v
+    return `rgb(0,${g},0)`
 }
 
 const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
@@ -75,16 +102,27 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 if (imageSpecs.height <= 0 || imageSpecs.wdith <= 0)
                     throw new Error('Invalid capture dimensions')
 
-                const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = imageSpecs.wdith
-                tempCanvas.height = imageSpecs.height
+                const solidBlocks = isSolidBlocksMode(settings.characterSet)
+                const grid = solidBlocks
+                    ? squareBlockGrid(canvasSize.width, canvasSize.height, settings.fontSize)
+                    : null
 
-                const tempCtx = tempCanvas.getContext('2d', { alpha: false })
-
-                const charsX = Math.floor(canvasSize.width / settings.fontSize)
-                const charsY = Math.floor(canvasSize.height / settings.fontSize)
+                const charsX = solidBlocks
+                    ? grid!.cols
+                    : Math.floor(canvasSize.width / settings.fontSize)
+                const charsY = solidBlocks
+                    ? grid!.rows
+                    : Math.floor(canvasSize.height / settings.fontSize)
 
                 if (charsX <= 0 || charsY <= 0) throw new Error('Invalid character dimensions')
+
+                const exportCell = solidBlocks ? grid!.cell * scaleFactor : imageSpecs.fontSize
+
+                const tempCanvas = document.createElement('canvas')
+                tempCanvas.width = solidBlocks ? charsX * exportCell : imageSpecs.wdith
+                tempCanvas.height = solidBlocks ? charsY * exportCell : imageSpecs.height
+
+                const tempCtx = tempCanvas.getContext('2d', { alpha: false })
 
                 const analysisCanvas = document.createElement('canvas')
                 analysisCanvas.height = charsY
@@ -100,18 +138,16 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                 tempCtx.imageSmoothingEnabled = false
                 tempCtx.fillStyle = settings.invert ? '#000000' : '#ffffff'
-                tempCtx.fillRect(0, 0, imageSpecs.wdith, imageSpecs.height)
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height)
                 tempCtx.font = `${imageSpecs.fontSize}px monospace`
                 tempCtx.textBaseline = 'top'
 
                 const brightnessMap = createBrightnessMap(ramp)
                 const dither = isDitherMode(settings.characterSet)
-                const blocks = isBlocksMode(settings.characterSet)
-                const fs = imageSpecs.fontSize
 
                 for (let i = 0; i < charsX * charsY; i++) {
-                    const xPos = (i % charsX) * fs
-                    const yPos = Math.floor(i / charsX) * fs
+                    const xPos = (i % charsX) * exportCell
+                    const yPos = Math.floor(i / charsX) * exportCell
 
                     const r = pixels[i * 4]
                     const g = pixels[i * 4 + 1]
@@ -120,7 +156,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     let l = getLuminance(r, g, b)
                     l = adjustColor(l, settings.contrast, settings.brightness)
 
-                    if (blocks) {
+                    if (solidBlocks) {
                         if (settings.colorMode) {
                             const ra = adjustColor(r, settings.contrast, settings.brightness)
                             const ga = adjustColor(g, settings.contrast, settings.brightness)
@@ -130,7 +166,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             const q = quantizeBlockLevel(settings.invert ? 255 - l : l)
                             tempCtx.fillStyle = `rgb(${q},${q},${q})`
                         }
-                        tempCtx.fillRect(xPos, yPos, fs, fs)
+                        tempCtx.fillRect(xPos, yPos, exportCell, exportCell)
                         continue
                     }
 
@@ -148,9 +184,15 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     }
 
                     if (settings.colorMode) {
-                        tempCtx.fillStyle = `rgb(${r},${g},${b})`
+                        tempCtx.fillStyle =
+                            settings.characterSet === 'matrix'
+                                ? matrixGreenFromLuma(l, settings.invert)
+                                : `rgb(${r},${g},${b})`
                     } else {
-                        tempCtx.fillStyle = settings.invert ? '#ffffff' : '#000000'
+                        tempCtx.fillStyle = getMonochromeForeground(
+                            settings.characterSet,
+                            settings.invert,
+                        )
                     }
 
                     tempCtx.fillText(char, xPos, yPos)
@@ -218,9 +260,18 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
 
                 const dpr = window.devicePixelRatio || 1
                 const fontScale = settings.fontSize || 10
+                const solidBlocks = isSolidBlocksMode(settings.characterSet)
+                const blockGrid = solidBlocks
+                    ? squareBlockGrid(canvasSize.width, canvasSize.height, fontScale)
+                    : null
 
-                const srcW = Math.floor(canvasSize.width / fontScale)
-                const srcH = Math.floor(canvasSize.height / fontScale)
+                const srcW = solidBlocks
+                    ? blockGrid!.cols
+                    : Math.floor(canvasSize.width / fontScale)
+                const srcH = solidBlocks
+                    ? blockGrid!.rows
+                    : Math.floor(canvasSize.height / fontScale)
+                const cellSize = solidBlocks ? blockGrid!.cell : fontScale
 
                 if (srcW <= 0 || srcH <= 0) {
                     animationIdRef.current = requestAnimationFrame(t => renderCanvas(t))
@@ -262,10 +313,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 const brightnessMap = createBrightnessMap(ramp)
                 const { contrast, brightness: brightnessOffset, colorMode, invert } = settings
                 const dither = isDitherMode(settings.characterSet)
-                const blocks = isBlocksMode(settings.characterSet)
 
-                const cssW = srcW * fontScale
-                const cssH = srcH * fontScale
+                const cssW = solidBlocks ? blockGrid!.cssW : srcW * fontScale
+                const cssH = solidBlocks ? blockGrid!.cssH : srcH * fontScale
                 canvas.width = cssW * dpr
                 canvas.height = cssH * dpr
                 canvas.style.width = `${cssW}px`
@@ -321,14 +371,17 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const y = Math.floor(i / srcW) * fontScale
 
                         if (colorMode) {
-                            ctx.fillStyle = `rgb(${r},${g},${b})`
+                            ctx.fillStyle =
+                                settings.characterSet === 'matrix'
+                                    ? matrixGreenFromLuma(blended, invert)
+                                    : `rgb(${r},${g},${b})`
                         } else {
-                            ctx.fillStyle = invert ? '#ffffff' : '#000000'
+                            ctx.fillStyle = getMonochromeForeground(settings.characterSet, invert)
                         }
 
                         ctx.fillText(char, x, y)
                     }
-                } else if (blocks) {
+                } else if (solidBlocks) {
                     if (prevFrameRef.current) prevFrameRef.current = null
 
                     for (let i = 0; i < pixelCount; i++) {
@@ -341,8 +394,8 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             l = adjustColor(l, contrast, brightnessOffset)
                         }
 
-                        const x = (i % srcW) * fontScale
-                        const y = Math.floor(i / srcW) * fontScale
+                        const x = (i % srcW) * cellSize
+                        const y = Math.floor(i / srcW) * cellSize
 
                         if (colorMode) {
                             const ra = adjustColor(r, contrast, brightnessOffset)
@@ -353,7 +406,7 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                             const q = quantizeBlockLevel(invert ? 255 - l : l)
                             ctx.fillStyle = `rgb(${q},${q},${q})`
                         }
-                        ctx.fillRect(x, y, fontScale, fontScale)
+                        ctx.fillRect(x, y, cellSize, cellSize)
                     }
                 } else {
                     if (prevFrameRef.current) prevFrameRef.current = null
@@ -375,9 +428,12 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const y = Math.floor(i / srcW) * fontScale
 
                         if (colorMode) {
-                            ctx.fillStyle = `rgb(${r},${g},${b})`
+                            ctx.fillStyle =
+                                settings.characterSet === 'matrix'
+                                    ? matrixGreenFromLuma(l, invert)
+                                    : `rgb(${r},${g},${b})`
                         } else {
-                            ctx.fillStyle = invert ? '#ffffff' : '#000000'
+                            ctx.fillStyle = getMonochromeForeground(settings.characterSet, invert)
                         }
 
                         ctx.fillText(char, x, y)

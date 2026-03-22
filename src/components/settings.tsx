@@ -1,6 +1,6 @@
 import { memo, useState } from 'react'
 import { ChevronLeft, X } from 'lucide-react'
-import { AsciiSettings } from '../types/types'
+import { AsciiSettings, CHARACTER_SET_OPTIONS } from '../types/types'
 
 interface SettingsCompProps {
     settings: AsciiSettings
@@ -15,8 +15,6 @@ const SLIDER_CONFIGS = {
     contrast: { min: 0.5, max: 3.0, step: 0.1, label: 'Contrast' },
     brightness: { min: -100, max: 100, step: 1, label: 'Brightness' },
 }
-
-const CHARACTER_SETS = ['standard', 'simple', 'blocks', 'matrix', 'edges', 'gek', 'dither']
 
 function Settings({ settings, onChange }: SettingsCompProps) {
     const [isOpen, setIsOpen] = useState(false)
@@ -144,17 +142,17 @@ function Settings({ settings, onChange }: SettingsCompProps) {
                             Characters
                         </span>
                         <div className="flex flex-col gap-0.5">
-                            {CHARACTER_SETS.map(c => (
+                            {CHARACTER_SET_OPTIONS.map(({ id, label }) => (
                                 <button
-                                    key={c}
+                                    key={id}
                                     className={`text-left py-2 px-2 rounded text-[10px] tracking-[0.1em] uppercase font-light transition-colors ${
-                                        settings.characterSet === c
+                                        settings.characterSet === id
                                             ? 'text-white bg-white/10'
                                             : 'text-white/40 hover:text-white/70'
                                     }`}
-                                    onClick={() => handleChange('characterSet', c)}
+                                    onClick={() => handleChange('characterSet', id)}
                                 >
-                                    {c}
+                                    {label}
                                 </button>
                             ))}
                         </div>
