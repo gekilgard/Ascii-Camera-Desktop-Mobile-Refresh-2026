@@ -17,7 +17,10 @@ const SLIDER_CONFIGS = {
     contrast: { min: 0.5, max: 3.0, step: 0.1, label: 'Contrast' },
     brightness: { min: -100, max: 100, step: 1, label: 'Brightness' },
     saturation: { min: 0, max: 200, step: 1, label: 'Saturation' },
+    hue: { min: -180, max: 180, step: 1, label: 'Hue' },
 }
+
+const COLOR_MODE_SLIDER_KEYS: (keyof typeof SLIDER_CONFIGS)[] = ['saturation', 'hue']
 
 function Settings({ settings, onChange, onSettingsSliderActiveChange }: SettingsCompProps) {
     const [isOpen, setIsOpen] = useState(false)
@@ -50,7 +53,11 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
         }
     }, [activeSlider, endSliderDrag])
 
+    const isColorSliderDisabled = (key: keyof typeof SLIDER_CONFIGS) =>
+        COLOR_MODE_SLIDER_KEYS.includes(key) && !settings.colorMode
+
     const handleSliderStart = (key: string, value: number, e: SliderEvent) => {
+        if (isColorSliderDisabled(key as keyof typeof SLIDER_CONFIGS)) return
         setActiveSlider(key)
         setSliderValue(value)
         setSliderPosition(getClientPos(e))
@@ -58,6 +65,7 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
     }
 
     const handleSliderChange = (key: string, val: number, e: SliderEvent) => {
+        if (isColorSliderDisabled(key as keyof typeof SLIDER_CONFIGS)) return
         handleChange(key as keyof AsciiSettings, val)
         if (activeSlider === key) {
             setSliderValue(val)
@@ -69,20 +77,36 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
         if (key === 'contrast') return value.toFixed(1)
         if (key === 'brightness') return `${value > 0 ? '+' : ''}${value}`
         if (key === 'saturation') return `${Math.round(value)}%`
+        if (key === 'hue') return `${value > 0 ? '+' : ''}${Math.round(value)}°`
         return `${value}px`
     }
 
     const renderSlider = (key: keyof typeof SLIDER_CONFIGS) => {
         const config = SLIDER_CONFIGS[key]
+        const disabled = isColorSliderDisabled(key)
 
         return (
-            <section key={key} className="space-y-2">
-                <div className="flex justify-between items-baseline">
-                    <span className="text-[10px] tracking-[0.15em] uppercase text-white/60">
+            <section
+                key={key}
+                className={`space-y-2 transition-opacity duration-200 ${
+                    disabled ? 'pointer-events-none opacity-35' : 'opacity-100'
+                }`}
+                aria-disabled={disabled}
+            >
+                <div className="flex items-baseline justify-between">
+                    <span
+                        className={`text-[10px] uppercase tracking-[0.15em] ${
+                            disabled ? 'text-white/35' : 'text-white/60'
+                        }`}
+                    >
                         {config.label}
                     </span>
-                    <span className="text-[10px] tracking-[0.1em] text-white/35 tabular-nums">
-                        {formatValue(key, settings[key])}
+                    <span
+                        className={`text-[10px] tabular-nums tracking-[0.1em] ${
+                            disabled ? 'text-white/25' : 'text-white/35'
+                        }`}
+                    >
+                        {formatValue(key, settings[key] as number)}
                     </span>
                 </div>
                 <input
@@ -90,9 +114,10 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
                     min={config.min}
                     max={config.max}
                     step={config.step}
-                    value={settings[key]}
-                    onMouseDown={e => handleSliderStart(key, settings[key], e)}
-                    onTouchStart={e => handleSliderStart(key, settings[key], e)}
+                    value={settings[key] as number}
+                    disabled={disabled}
+                    onMouseDown={e => handleSliderStart(key, settings[key] as number, e)}
+                    onTouchStart={e => handleSliderStart(key, settings[key] as number, e)}
                     onChange={e =>
                         handleSliderChange(key, +e.target.value, e as unknown as SliderEvent)
                     }

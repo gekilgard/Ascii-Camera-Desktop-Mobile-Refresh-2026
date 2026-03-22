@@ -5,6 +5,8 @@ export interface AsciiSettings {
     brightness: number
     /** 0 = grayscale … 100 = natural … 200 = stronger color (see adjustSaturationRgb). */
     saturation: number
+    /** Hue shift in degrees; 0 = unchanged. Only applied when color mode is on. */
+    hue: number
     colorMode: boolean
     invert: boolean
     characterSet: 'ascii' | 'dither' | 'solidBlocks' | 'matrix' | 'gek' | 'corporate'
@@ -13,7 +15,7 @@ export interface AsciiSettings {
 /** Slider + toggles applied when picking a filter (Resolution slider = fontSize). */
 export type FilterPresetValues = Pick<
     AsciiSettings,
-    'fontSize' | 'contrast' | 'brightness' | 'saturation' | 'colorMode' | 'invert'
+    'fontSize' | 'contrast' | 'brightness' | 'saturation' | 'hue' | 'colorMode' | 'invert'
 >
 
 export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetValues> = {
@@ -22,6 +24,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 1.8,
         brightness: 19,
         saturation: 100,
+        hue: 0,
         colorMode: false,
         invert: true,
     },
@@ -30,6 +33,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 1.4,
         brightness: 30,
         saturation: 100,
+        hue: 0,
         colorMode: false,
         invert: false,
     },
@@ -38,6 +42,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 0.5,
         brightness: 89,
         saturation: 100,
+        hue: 0,
         colorMode: true,
         invert: false,
     },
@@ -46,6 +51,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 1.1,
         brightness: -76,
         saturation: 100,
+        hue: 0,
         colorMode: true,
         invert: false,
     },
@@ -54,6 +60,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 0.8,
         brightness: 5,
         saturation: 100,
+        hue: 0,
         colorMode: true,
         invert: true,
     },
@@ -62,6 +69,7 @@ export const FILTER_PRESETS: Record<AsciiSettings['characterSet'], FilterPresetV
         contrast: 0.5,
         brightness: -100,
         saturation: 100,
+        hue: 0,
         colorMode: false,
         invert: false,
     },

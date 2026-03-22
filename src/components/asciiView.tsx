@@ -2,7 +2,7 @@ import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef }
 import { AsciiRendererHandle, AsciiSettings, CHAR_SETS, ProcessingStats } from '../types/types'
 import {
     adjustColor,
-    adjustSaturationRgb,
+    applySaturationAndHue,
     createBrightnessMap,
     getChar,
     getLuminance,
@@ -158,7 +158,9 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     const r = pixels[i * 4]
                     const g = pixels[i * 4 + 1]
                     const b = pixels[i * 4 + 2]
-                    const [rs, gs, bs] = adjustSaturationRgb(r, g, b, settings.saturation)
+                    const effSat = settings.colorMode ? settings.saturation : 100
+                    const effHue = settings.colorMode ? settings.hue : 0
+                    const [rs, gs, bs] = applySaturationAndHue(r, g, b, effSat, effHue)
 
                     let l = getLuminance(rs, gs, bs)
                     l = adjustColor(l, settings.contrast, settings.brightness)
@@ -239,11 +241,14 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                 for (let y = 0; y < standardHeight; y++) {
                     for (let x = 0; x < standardWidth; x++) {
                         const idx = (y * standardWidth + x) * 4
-                        const [rs, gs, bs] = adjustSaturationRgb(
+                        const effSat = settings.colorMode ? settings.saturation : 100
+                        const effHue = settings.colorMode ? settings.hue : 0
+                        const [rs, gs, bs] = applySaturationAndHue(
                             pixels[idx],
                             pixels[idx + 1],
                             pixels[idx + 2],
-                            settings.saturation,
+                            effSat,
+                            effHue,
                         )
                         const l = getLuminance(rs, gs, bs)
                         const adjL = adjustColor(l, settings.contrast, settings.brightness)
@@ -330,7 +335,10 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                     colorMode,
                     invert,
                     saturation,
+                    hue,
                 } = settings
+                const effectiveSat = colorMode ? saturation : 100
+                const effectiveHue = colorMode ? hue : 0
                 const dither = isDitherMode(settings.characterSet)
 
                 const cssW = solidBlocks ? blockGrid!.cssW : srcW * fontScale
@@ -375,7 +383,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
-                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
+                        const [rs, gs, bs] = applySaturationAndHue(
+                            r,
+                            g,
+                            b,
+                            effectiveSat,
+                            effectiveHue,
+                        )
 
                         let l = getLuminance(rs, gs, bs)
                         if (contrast !== 1.0 || brightnessOffset !== 0) {
@@ -414,7 +428,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
-                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
+                        const [rs, gs, bs] = applySaturationAndHue(
+                            r,
+                            g,
+                            b,
+                            effectiveSat,
+                            effectiveHue,
+                        )
 
                         let l = getLuminance(rs, gs, bs)
                         if (contrast !== 1.0 || brightnessOffset !== 0) {
@@ -442,7 +462,13 @@ const AsciiView = forwardRef<AsciiRendererHandle, AsciiViewProps>(
                         const r = pixels[i * 4]
                         const g = pixels[i * 4 + 1]
                         const b = pixels[i * 4 + 2]
-                        const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturation)
+                        const [rs, gs, bs] = applySaturationAndHue(
+                            r,
+                            g,
+                            b,
+                            effectiveSat,
+                            effectiveHue,
+                        )
 
                         let l = getLuminance(rs, gs, bs)
 

@@ -53,3 +53,90 @@ export const adjustSaturationRgb = (
         Math.max(0, Math.min(255, Math.round(blend(b)))),
     ]
 }
+
+/** H,S,L each 0–1 */
+function rgbToHsl(r255: number, g255: number, b255: number): [number, number, number] {
+    const r = r255 / 255
+    const g = g255 / 255
+    const b = b255 / 255
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const l = (max + min) / 2
+    let h = 0
+    let s = 0
+
+    if (max !== min) {
+        const d = max - min
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+        switch (max) {
+            case r:
+                h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+                break
+            case g:
+                h = ((b - r) / d + 2) / 6
+                break
+            default:
+                h = ((r - g) / d + 4) / 6
+                break
+        }
+    }
+    return [h, s, l]
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+    let r: number
+    let g: number
+    let b: number
+
+    if (s === 0) {
+        r = g = b = l
+    } else {
+        const hue2rgb = (p: number, q: number, t: number) => {
+            let tt = t
+            if (tt < 0) tt += 1
+            if (tt > 1) tt -= 1
+            if (tt < 1 / 6) return p + (q - p) * 6 * tt
+            if (tt < 1 / 2) return q
+            if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6
+            return p
+        }
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+        const p = 2 * l - q
+        r = hue2rgb(p, q, h + 1 / 3)
+        g = hue2rgb(p, q, h)
+        b = hue2rgb(p, q, h - 1 / 3)
+    }
+    return [
+        Math.max(0, Math.min(255, Math.round(r * 255))),
+        Math.max(0, Math.min(255, Math.round(g * 255))),
+        Math.max(0, Math.min(255, Math.round(b * 255))),
+    ]
+}
+
+/** Rotate hue in degrees (-180…180 typical). 0 = no change. */
+export const adjustHueRgb = (
+    r: number,
+    g: number,
+    b: number,
+    hueShiftDegrees: number,
+): [number, number, number] => {
+    if (hueShiftDegrees === 0) {
+        return [Math.round(r), Math.round(g), Math.round(b)]
+    }
+    const [h, s, l] = rgbToHsl(r, g, b)
+    let nh = h + hueShiftDegrees / 360
+    nh -= Math.floor(nh)
+    return hslToRgb(nh, s, l)
+}
+
+/** Saturation then hue. Used when color mode is on; pass 100 / 0 when off for identity. */
+export const applySaturationAndHue = (
+    r: number,
+    g: number,
+    b: number,
+    saturationPercent: number,
+    hueShiftDegrees: number,
+): [number, number, number] => {
+    const [rs, gs, bs] = adjustSaturationRgb(r, g, b, saturationPercent)
+    return adjustHueRgb(rs, gs, bs, hueShiftDegrees)
+}
