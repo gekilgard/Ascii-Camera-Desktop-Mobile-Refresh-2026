@@ -12,6 +12,7 @@ import {
 import CameraControls, { AppMode } from './components/cameraControls'
 import { MdCancel } from 'react-icons/md'
 import { getSupportedMediaRecorderMimeType } from './utils/mediaRecorder'
+import { dataUrlToFile, shareFileOrDownload } from './utils/shareOrDownload'
 
 function App() {
     const DEFAULT_SETTIGNS: AsciiSettings = {
@@ -149,6 +150,16 @@ function App() {
         setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'))
     }, [])
 
+    const savePngDataUrl = useCallback(async (imageUrl: string, basename: string) => {
+        const filename = `${basename}-${Date.now()}.png`
+        const file = await dataUrlToFile(imageUrl, filename)
+        await shareFileOrDownload({
+            file,
+            fallbackObjectUrl: imageUrl,
+            fallbackFilename: filename,
+        })
+    }, [])
+
     const takeSnapshot = useCallback(async () => {
         if (!asciiRendererRef.current) return
         setFlash(true)
@@ -160,16 +171,11 @@ function App() {
                 setFlash(false)
                 return
             }
-            const a = document.createElement('a')
-            a.href = imageUrl
-            a.download = `ascii-capture-${Date.now()}.png`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
+            await savePngDataUrl(imageUrl, 'ascii-capture')
         } catch (error) {
             console.error('Capture failed', error)
         }
-    }, [])
+    }, [savePngDataUrl])
 
     const saveImage = useCallback(async () => {
         if (!asciiRendererRef.current) return
@@ -179,17 +185,12 @@ function App() {
         try {
             const imageUrl = await asciiRendererRef.current.captureImage()
             if (!imageUrl) return
-            const a = document.createElement('a')
-            a.href = imageUrl
-            a.download = `ascii-${Date.now()}.png`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
+            await savePngDataUrl(imageUrl, 'ascii')
         } catch (err) {
             console.error('Save failed', err)
             setError('Failed to save image. Please try again.')
         }
-    }, [])
+    }, [savePngDataUrl])
 
     const toggleRecording = useCallback(() => {
         if (isRecording) {
@@ -227,15 +228,24 @@ function App() {
                 }
 
                 recorder.onstop = () => {
-                    const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = `ascii-video-${Date.now()}.webm`
-                    document.body.appendChild(a)
-                    a.click()
-                    document.body.removeChild(a)
-                    setRecordingTime(0)
+                    void (async () => {
+                        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
+                        const filename = `ascii-video-${Date.now()}.webm`
+                        const url = URL.createObjectURL(blob)
+                        try {
+                            const file = new File([blob], filename, {
+                                type: blob.type || 'video/webm',
+                            })
+                            await shareFileOrDownload({
+                                file,
+                                fallbackObjectUrl: url,
+                                fallbackFilename: filename,
+                            })
+                        } finally {
+                            setTimeout(() => URL.revokeObjectURL(url), 60_000)
+                        }
+                        setRecordingTime(0)
+                    })()
                 }
 
                 recorder.start()
