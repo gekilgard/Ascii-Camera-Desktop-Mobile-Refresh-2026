@@ -5,7 +5,7 @@ export interface AsciiSettings {
     brightness: number
     colorMode: boolean
     invert: boolean
-    characterSet: 'standard' | 'simple' | 'blocks' | 'matrix' | 'edges'
+    characterSet: 'standard' | 'simple' | 'blocks' | 'matrix' | 'edges' | 'gek' | 'dither'
 }
 
 export interface AsciiCharacterMap {
@@ -18,6 +18,8 @@ export const CHAR_SETS: AsciiCharacterMap = {
     blocks: ' ░▒▓█',
     matrix: ' 01',
     edges: '  .,-_~:;=!*#$@',
+    gek: ' gekGEK',
+    dither: ' ░▒▓█',
 }
 
 export type CameraFacingMode = 'user' | 'environment'

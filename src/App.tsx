@@ -8,7 +8,7 @@ import {
     CameraFacingMode,
     ProcessingStats,
 } from './types/types'
-import CameraControls from './components/cameraControls'
+import CameraControls, { AppMode } from './components/cameraControls'
 import { MdCancel } from 'react-icons/md'
 import { getSupportedMediaRecorderMimeType } from './utils/mediaRecorder'
 
@@ -34,9 +34,13 @@ function App() {
     })
 
     const [flash, setFlash] = useState<boolean>(false)
-    const [clipboardSuccess, setClipboardSuccess] = useState<boolean>(false)
     const [recordingTime, setRecordingTime] = useState(0)
     const [error, setError] = useState<string | null>(null)
+    const [mode, setMode] = useState<AppMode>('photo')
+    const [uploadedMedia, setUploadedMedia] = useState<HTMLImageElement | HTMLVideoElement | null>(
+        null,
+    )
+    const uploadedVideoRef = useRef<HTMLVideoElement | null>(null)
 
     const asciiRendererRef = useRef<AsciiRendererHandle>(null)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -44,6 +48,8 @@ function App() {
     const recordingTimerRef = useRef<number | null>(null)
 
     useEffect(() => {
+        if (mode === 'upload') return
+
         let active = true
         let currentStream: MediaStream | null = null
 
@@ -91,7 +97,55 @@ function App() {
             setStream(null)
             window.removeEventListener('resize', handleResize)
         }
-    }, [facingMode])
+    }, [facingMode, mode])
+
+    const handleModeChange = useCallback(
+        (newMode: AppMode) => {
+            if (newMode !== 'upload') {
+                if (uploadedVideoRef.current) {
+                    uploadedVideoRef.current.pause()
+                    uploadedVideoRef.current.src = ''
+                    uploadedVideoRef.current = null
+                }
+                setUploadedMedia(null)
+            }
+            if (newMode === 'upload') {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop())
+                    setStream(null)
+                }
+            }
+            setMode(newMode)
+        },
+        [stream],
+    )
+
+    const handleFileUpload = useCallback((file: File) => {
+        const url = URL.createObjectURL(file)
+
+        if (uploadedVideoRef.current) {
+            uploadedVideoRef.current.pause()
+            uploadedVideoRef.current.src = ''
+            uploadedVideoRef.current = null
+        }
+
+        if (file.type.startsWith('image/')) {
+            const img = new Image()
+            img.onload = () => setUploadedMedia(img)
+            img.src = url
+        } else if (file.type.startsWith('video/')) {
+            const video = document.createElement('video')
+            video.playsInline = true
+            video.muted = true
+            video.loop = true
+            video.onloadeddata = () => {
+                setUploadedMedia(video)
+                video.play()
+            }
+            video.src = url
+            uploadedVideoRef.current = video
+        }
+    }, [])
 
     const toggleCamera = useCallback(() => {
         setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'))
@@ -119,27 +173,28 @@ function App() {
         }
     }, [])
 
-    const copyToClipboard = useCallback(() => {
+    const saveImage = useCallback(async () => {
         if (!asciiRendererRef.current) return
+        setFlash(true)
+        setTimeout(() => setFlash(false), 150)
 
         try {
-            const copyContent = asciiRendererRef.current.getAsciiText()
-
-            if (!copyContent) throw new Error()
-
-            navigator.clipboard.writeText(copyContent).then(() => {
-                setClipboardSuccess(true)
-                setTimeout(() => setClipboardSuccess(false), 2000)
-            })
-        } catch (error) {
-            console.log('Copy Failed:', error)
-            setError('Failed to Copy. Please try again')
+            const imageUrl = await asciiRendererRef.current.captureImage()
+            if (!imageUrl) return
+            const a = document.createElement('a')
+            a.href = imageUrl
+            a.download = `ascii-${Date.now()}.png`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+        } catch (err) {
+            console.error('Save failed', err)
+            setError('Failed to save image. Please try again.')
         }
     }, [])
 
     const toggleRecording = useCallback(() => {
         if (isRecording) {
-            // stop recodring
             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
                 mediaRecorderRef.current.stop()
 
@@ -147,14 +202,13 @@ function App() {
             }
             setIsRecording(false)
         } else {
-            // start recodring
             const canvas = asciiRendererRef.current?.getCanvas()
             if (!canvas || !canvas.height || !canvas.width)
                 throw new Error('Error while start recording')
 
-            const videoBitsPerSecond = 2500000 // Default 2.5 Mbps
+            const videoBitsPerSecond = 2500000
 
-            const stream = canvas.captureStream(30) // 30 fps
+            const captureStream = canvas.captureStream(30)
 
             try {
                 const mimeType = getSupportedMediaRecorderMimeType()
@@ -167,7 +221,7 @@ function App() {
                     videoBitsPerSecond,
                 }
 
-                const recorder = new MediaRecorder(stream, options)
+                const recorder = new MediaRecorder(captureStream, options)
                 recordedChunksRef.current = []
 
                 recorder.ondataavailable = e => {
@@ -189,7 +243,6 @@ function App() {
                 recorder.start()
                 mediaRecorderRef.current = recorder
                 setIsRecording(true)
-                console.log('start')
 
                 recordingTimerRef.current = window.setInterval(() => {
                     setRecordingTime(t => t + 1)
@@ -207,43 +260,53 @@ function App() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
 
+    const inverted = settings.invert
+
     return (
-        <div className="h-screen w-screen overflow-hidden">
+        <div
+            className={`h-screen w-screen overflow-hidden transition-colors duration-300 ${inverted ? 'bg-black' : 'bg-white'}`}
+        >
             <Header
                 fps={stats.fps}
                 renderTime={stats.renderTime}
                 width={windowSize.width}
                 height={windowSize.height}
+                inverted={inverted}
             />
 
-            <Settings settings={settings} onChange={setSettings} />
+            <Settings settings={settings} onChange={setSettings} inverted={inverted} />
 
-            {/* Flash Effect */}
             {flash && (
-                <div className="fixed inset-0 bg-white z-50 animate-out fade-out duration-150 pointer-events-none" />
+                <div
+                    className={`fixed inset-0 z-50 animate-out fade-out duration-150 pointer-events-none ${inverted ? 'bg-black' : 'bg-white'}`}
+                />
             )}
 
-            {/* Clipboard Toast */}
-            {clipboardSuccess && (
-                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-black/80 border border-green-500 px-6 py-3 rounded text-green-400 font-bold backdrop-blur animate-in zoom-in duration-200">
-                    ASCII COPIED TO CLIPBOARD
-                </div>
-            )}
-
-            {/* Error Toast */}
             {error && (
-                <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-black/80 border border-red-500 px-6 py-4 rounded text-red-500 font-bold backdrop-blur animate-in zoom-in duration-200">
+                <div
+                    className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 px-6 py-4 rounded backdrop-blur animate-in zoom-in duration-200 border ${
+                        inverted
+                            ? 'bg-black/90 border-white/20 text-white'
+                            : 'bg-white/90 border-black/10 text-black'
+                    }`}
+                >
                     <button
                         onClick={() => setError(null)}
-                        className="absolute top-3 right-3 text-red-500 hover:text-red-400 text-xl leading-none"
+                        className={`absolute top-3 right-3 text-xl leading-none ${inverted ? 'text-white/50 hover:text-white' : 'text-black/40 hover:text-black'}`}
                         aria-label="Close error"
                     >
                         <MdCancel />
                     </button>
 
                     <div>
-                        <h1 className="text-4xl mb-4">SYSTEM ERROR</h1>
-                        <p>{error}</p>
+                        <h1 className="text-xl mb-3 text-[11px] tracking-[0.2em] uppercase font-light">
+                            Error
+                        </h1>
+                        <p
+                            className={`text-sm font-light ${inverted ? 'text-white/70' : 'text-black/60'}`}
+                        >
+                            {error}
+                        </p>
                     </div>
                 </div>
             )}
@@ -252,20 +315,26 @@ function App() {
                 <AsciiView
                     ref={asciiRendererRef}
                     settings={settings}
-                    stream={stream}
+                    stream={mode !== 'upload' ? stream : null}
+                    uploadedMedia={mode === 'upload' ? uploadedMedia : null}
                     onStatsUpdate={setStats}
                     canvasSize={windowSize}
                 />
             </div>
 
             <CameraControls
+                mode={mode}
+                onModeChange={handleModeChange}
                 onFlip={toggleCamera}
                 onShot={takeSnapshot}
-                onCopy={copyToClipboard}
+                onSave={saveImage}
                 onToggleRecording={toggleRecording}
+                onFileUpload={handleFileUpload}
                 isRecording={isRecording}
                 formatTime={formatTime}
                 recordingTime={recordingTime}
+                hasUpload={!!uploadedMedia}
+                inverted={inverted}
             />
         </div>
     )

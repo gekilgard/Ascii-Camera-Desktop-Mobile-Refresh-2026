@@ -1,28 +1,39 @@
-import { RefreshCw, Copy, Check } from 'lucide-react'
-import { memo, useState } from 'react'
+import { RefreshCw, Download, Check, Upload } from 'lucide-react'
+import { memo, useRef, useState } from 'react'
+
+export type AppMode = 'photo' | 'video' | 'upload'
 
 type CameraControlsProps = {
+    mode: AppMode
+    onModeChange: (mode: AppMode) => void
     onFlip: () => void
     onShot: () => void
-    onCopy: () => void
+    onSave: () => void
     onToggleRecording: () => void
+    onFileUpload: (file: File) => void
     isRecording: boolean
     formatTime: (seconds: number) => string
     recordingTime: number
+    hasUpload: boolean
+    inverted: boolean
 }
 
 const CameraControls = ({
+    mode,
+    onModeChange,
     onFlip,
     onShot,
-    onCopy,
+    onSave,
     onToggleRecording,
+    onFileUpload,
     isRecording,
     formatTime,
     recordingTime,
+    hasUpload,
 }: CameraControlsProps) => {
-    const [mode, setMode] = useState<'photo' | 'video'>('photo')
     const [isFlipping, setIsFlipping] = useState(false)
-    const [isCopied, setIsCopied] = useState(false)
+    const [isSaved, setIsSaved] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFlip = () => {
         setIsFlipping(prev => !prev)
@@ -30,129 +41,158 @@ const CameraControls = ({
         setTimeout(() => setIsFlipping(prev => !prev), 600)
     }
 
-    const handleCopy = () => {
-        setIsCopied(true)
-        onCopy()
-        setTimeout(() => setIsCopied(false), 1000)
+    const handleSave = () => {
+        setIsSaved(true)
+        onSave()
+        setTimeout(() => setIsSaved(false), 1200)
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) onFileUpload(file)
+        e.target.value = ''
     }
 
     return (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center pb-8 md:pb-10 gap-6">
-            <div className="pointer-events-auto flex items-center gap-1 bg-black/50 backdrop-blur-md rounded-full p-1 border border-green-500/30">
-                <button
-                    onClick={() => setMode('photo')}
-                    className={`px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all ${
-                        mode === 'photo'
-                            ? 'bg-green-600 text-black'
-                            : 'text-green-400 hover:text-green-300'
-                    }`}
-                >
-                    PHOTO
-                </button>
-                <button
-                    onClick={() => setMode('video')}
-                    className={`px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all ${
-                        mode === 'video'
-                            ? 'bg-red-600 text-black'
-                            : 'text-red-400 hover:text-red-300'
-                    }`}
-                >
-                    VIDEO
-                </button>
-            </div>
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center pb-8 md:pb-10 gap-4">
+            {isRecording && (
+                <div className="pointer-events-none text-[10px] tracking-[0.2em] uppercase font-light tabular-nums text-white bg-black/60 backdrop-blur-sm px-3 py-1 rounded">
+                    {formatTime(recordingTime)}
+                </div>
+            )}
 
-            <div className="pointer-events-auto flex items-end justify-center gap-8 md:gap-12 px-4">
-                <button
-                    onClick={handleFlip}
-                    className="group flex flex-col items-center gap-1.5 focus:outline-none"
-                >
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-green-500/30 bg-black/40 backdrop-blur flex items-center justify-center group-hover:bg-green-900/30 group-hover:border-green-400 transition-all">
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleFileChange}
+            />
+
+            <div className="pointer-events-auto flex items-center gap-6 md:gap-8">
+                {mode !== 'upload' && (
+                    <button
+                        onClick={handleFlip}
+                        className="group flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm focus:outline-none"
+                        aria-label="Flip camera"
+                    >
                         <RefreshCw
-                            size={22}
+                            size={16}
                             strokeWidth={1.5}
-                            className={`text-white transition-transform duration-600  ${isFlipping ? 'rotate-180' : ''}`}
+                            className={`text-white/70 group-hover:text-white transition-all duration-300 ${isFlipping ? 'rotate-180' : ''}`}
                         />
-                    </div>
-                    <span className="text-[9px] md:text-[10px] tracking-widest font-bold opacity-70 group-hover:opacity-100 text-white">
-                        FLIP
-                    </span>
-                </button>
+                    </button>
+                )}
+
+                {mode === 'upload' && (
+                    <button
+                        onClick={handleSave}
+                        className="group flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm focus:outline-none"
+                        aria-label="Save image"
+                    >
+                        {isSaved ? (
+                            <Check size={16} strokeWidth={1.5} className="text-white" />
+                        ) : (
+                            <Download
+                                size={16}
+                                strokeWidth={1.5}
+                                className="text-white/70 group-hover:text-white transition-colors"
+                            />
+                        )}
+                    </button>
+                )}
 
                 {mode === 'photo' ? (
                     <button
                         onClick={onShot}
-                        className="group flex flex-col items-center gap-1.5 focus:outline-none"
+                        className="group flex items-center justify-center focus:outline-none"
+                        aria-label="Capture photo"
                     >
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-[3px] border-white/80 bg-white/10 backdrop-blur flex items-center justify-center group-hover:bg-white/20 group-hover:scale-105 transition-all group-active:scale-95">
-                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white opacity-90 group-hover:opacity-100"></div>
+                        <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:border-white/70 group-active:scale-90 transition-all">
+                            <div className="w-11 h-11 rounded-full bg-white/80 group-hover:bg-white transition-colors"></div>
                         </div>
-                        <span className="text-[9px] md:text-[10px] tracking-widest font-bold opacity-70 group-hover:opacity-100 text-white">
-                            CAPTURE
-                        </span>
+                    </button>
+                ) : mode === 'video' ? (
+                    <button
+                        onClick={onToggleRecording}
+                        className="group flex items-center justify-center focus:outline-none"
+                        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                    >
+                        <div
+                            className={`w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm border-2 flex items-center justify-center transition-all ${
+                                isRecording
+                                    ? 'border-white/60'
+                                    : 'border-white/40 group-hover:border-white/70 group-active:scale-90'
+                            }`}
+                        >
+                            {isRecording ? (
+                                <div className="w-[calc(100%-2px)] h-[calc(100%-2px)] rounded-full bg-red-500 animate-pulse"></div>
+                            ) : (
+                                <div className="w-11 h-11 rounded-full bg-red-500/80 group-hover:bg-red-500 transition-colors"></div>
+                            )}
+                        </div>
                     </button>
                 ) : (
                     <button
-                        onClick={onToggleRecording}
-                        className="group flex flex-col items-center gap-1.5 focus:outline-none"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group flex items-center justify-center focus:outline-none"
+                        aria-label="Upload file"
                     >
-                        <div
-                            className={`w-20 h-20 md:w-24 md:h-24 rounded-full border-[3px] backdrop-blur flex items-center justify-center transition-all ${
-                                isRecording
-                                    ? 'border-red-500 bg-red-900/30 group-hover:bg-red-900/40'
-                                    : 'border-red-500/80 bg-red-500/10 group-hover:bg-red-500/20 group-hover:scale-105 group-active:scale-95'
-                            }`}
-                        >
-                            <div
-                                className={`bg-red-500 transition-all ${
-                                    isRecording
-                                        ? 'w-7 h-7 md:w-8 md:h-8 rounded-lg animate-pulse'
-                                        : 'w-16 h-16 md:w-20 md:h-20 rounded-full opacity-90 group-hover:opacity-100'
-                                }`}
-                            ></div>
+                        <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center group-hover:border-white/70 group-active:scale-90 transition-all">
+                            <Upload
+                                size={22}
+                                strokeWidth={1.5}
+                                className={`transition-colors ${hasUpload ? 'text-white' : 'text-white/70 group-hover:text-white'}`}
+                            />
                         </div>
-                        <span
-                            className={`text-[9px] md:text-[10px] tracking-widest font-bold transition-colors ${
-                                isRecording
-                                    ? 'text-red-400 font-mono'
-                                    : 'opacity-70 group-hover:opacity-100 text-white'
-                            }`}
-                        >
-                            {isRecording ? formatTime(recordingTime) : 'RECORD'}
-                        </span>
                     </button>
                 )}
 
-                <button
-                    onClick={handleCopy}
-                    className="group flex flex-col items-center gap-1.5 focus:outline-none"
-                >
-                    <div
-                        className={`w-14 h-14 md:w-16 md:h-16 rounded-full border backdrop-blur flex items-center justify-center transition-all ${
-                            isCopied
-                                ? 'border-green-400 bg-green-900/40 scale-110'
-                                : 'border-green-500/30 bg-black/40 group-hover:bg-green-900/30 group-hover:border-green-400'
-                        }`}
+                {mode !== 'upload' ? (
+                    <button
+                        onClick={handleSave}
+                        className="group flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm focus:outline-none"
+                        aria-label="Save image"
                     >
-                        {isCopied ? (
-                            <Check
-                                size={22}
-                                strokeWidth={2.5}
-                                className="text-green-400 animate-in fade-in zoom-in duration-200"
-                            />
+                        {isSaved ? (
+                            <Check size={16} strokeWidth={1.5} className="text-white" />
                         ) : (
-                            <Copy size={22} strokeWidth={1.5} className="text-white" />
+                            <Download
+                                size={16}
+                                strokeWidth={1.5}
+                                className="text-white/70 group-hover:text-white transition-colors"
+                            />
                         )}
-                    </div>
-                    <span
-                        className={`text-[9px] md:text-[10px] tracking-widest font-bold transition-colors ${
-                            isCopied
-                                ? 'text-green-400'
-                                : 'opacity-70 group-hover:opacity-100 text-white'
-                        }`}
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group flex items-center justify-center w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm focus:outline-none"
+                        aria-label="Choose another file"
                     >
-                        {isCopied ? 'COPIED' : 'COPY'}
+                        <Upload
+                            size={16}
+                            strokeWidth={1.5}
+                            className="text-white/70 group-hover:text-white transition-colors"
+                        />
+                    </button>
+                )}
+            </div>
+
+            <div className="pointer-events-auto flex items-center gap-4 bg-black/60 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                {(['photo', 'video', 'upload'] as const).map((m, i) => (
+                    <span key={m} className="flex items-center gap-4">
+                        {i > 0 && <span className="text-white/20 text-[9px]">/</span>}
+                        <button
+                            onClick={() => onModeChange(m)}
+                            className={`text-[9px] tracking-[0.2em] uppercase font-light transition-colors ${
+                                mode === m ? 'text-white' : 'text-white/40 hover:text-white/70'
+                            }`}
+                        >
+                            {m}
+                        </button>
                     </span>
-                </button>
+                ))}
             </div>
         </div>
     )

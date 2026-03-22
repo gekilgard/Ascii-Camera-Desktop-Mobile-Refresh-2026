@@ -1,29 +1,22 @@
 import { memo, useState } from 'react'
-import { FaGithub, FaXTwitter } from 'react-icons/fa6'
-import { IoClose, IoGlobe } from 'react-icons/io5'
-import { LuSettings2 } from 'react-icons/lu'
+import { ChevronLeft, X } from 'lucide-react'
 import { AsciiSettings } from '../types/types'
 
 interface SettingsCompProps {
     settings: AsciiSettings
     onChange: (newSettings: AsciiSettings) => void
+    inverted: boolean
 }
 
 type SliderEvent = React.MouseEvent | React.TouchEvent
 
 const SLIDER_CONFIGS = {
-    fontSize: { min: 6, max: 30, step: 1, label: 'RESOLUTION', range: 'Low (6) - High (30)' },
-    contrast: { min: 0.5, max: 3.0, step: 0.1, label: 'CONTRAST', range: 'Low (0.5) - High (3.0)' },
-    brightness: {
-        min: -100,
-        max: 100,
-        step: 1,
-        label: 'BRIGHTNESS',
-        range: 'Dark (-100) - Bright (+100)',
-    },
+    fontSize: { min: 6, max: 30, step: 1, label: 'Resolution' },
+    contrast: { min: 0.5, max: 3.0, step: 0.1, label: 'Contrast' },
+    brightness: { min: -100, max: 100, step: 1, label: 'Brightness' },
 }
 
-const CHARACTER_SETS = ['standard', 'simple', 'blocks', 'matrix', 'edges']
+const CHARACTER_SETS = ['standard', 'simple', 'blocks', 'matrix', 'edges', 'gek', 'dither']
 
 function Settings({ settings, onChange }: SettingsCompProps) {
     const [isOpen, setIsOpen] = useState(false)
@@ -64,17 +57,16 @@ function Settings({ settings, onChange }: SettingsCompProps) {
 
     const renderSlider = (key: keyof typeof SLIDER_CONFIGS) => {
         const config = SLIDER_CONFIGS[key]
-        const [lowLabel, highLabel] = config.range.split(' - ')
 
         return (
-            <section key={key}>
-                <div className="flex justify-between text-green-400 text-xs font-semibold mb-1">
-                    <span>{config.label}</span>
-                    <span className="text-green-300">{formatValue(key, settings[key])}</span>
-                </div>
-                <div className="flex justify-between text-[10px] text-green-500/60 mb-2">
-                    <span>{lowLabel}</span>
-                    <span>{highLabel}</span>
+            <section key={key} className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                    <span className="text-[10px] tracking-[0.15em] uppercase text-white/60">
+                        {config.label}
+                    </span>
+                    <span className="text-[10px] tracking-[0.1em] text-white/35 tabular-nums">
+                        {formatValue(key, settings[key])}
+                    </span>
                 </div>
                 <input
                     type="range"
@@ -97,14 +89,16 @@ function Settings({ settings, onChange }: SettingsCompProps) {
 
     return (
         <>
-            {!isOpen && (
-                <button
-                    className="p-3 text-green-400 fixed top-4 right-4 z-50 rounded-lg backdrop-blur-sm shadow-lg bg-black/40 border border-green-500/30 hover:bg-green-900/30 hover:border-green-400 transition-all"
-                    onClick={() => setIsOpen(true)}
-                >
-                    <LuSettings2 size={24} />
-                </button>
-            )}
+            <button
+                className="fixed top-4 right-4 z-50 w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded text-white/70 hover:text-white transition-colors"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {isOpen ? (
+                    <X size={16} strokeWidth={1.5} />
+                ) : (
+                    <ChevronLeft size={16} strokeWidth={1.5} />
+                )}
+            </button>
 
             {isOpen && !activeSlider && (
                 <div
@@ -118,65 +112,66 @@ function Settings({ settings, onChange }: SettingsCompProps) {
                     className="fixed z-50 pointer-events-none"
                     style={{
                         left: `${sliderPosition.x}px`,
-                        top: `${sliderPosition.y - 50}px`,
+                        top: `${sliderPosition.y - 44}px`,
                         transform: 'translateX(-50%)',
                     }}
                 >
-                    <div className="bg-green-600 text-black px-4 py-2 rounded-lg font-bold text-lg shadow-xl">
+                    <div className="bg-white text-black px-2.5 py-1 rounded text-[10px] font-light tracking-wider">
                         {formatValue(activeSlider, sliderValue)}
                     </div>
                 </div>
             )}
 
             <aside
-                className={`fixed top-0 right-0 h-full w-[60%] min-w-[280px] sm:w-96 bg-black border-l border-green-500 flex flex-col
-        transform transition-transform duration-300 z-40 shadow-2xl
+                className={`fixed top-0 right-0 h-full w-64 bg-black/80 backdrop-blur-md flex flex-col
+        transform transition-transform duration-300 z-40
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         ${activeSlider ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             >
-                <header className="flex items-center justify-between py-6 px-5 border-b border-green-600">
-                    <h2 className="font-bold text-2xl text-green-400 tracking-wide">SETTINGS</h2>
-                    <button
-                        className="text-green-400 p-2 hover:bg-green-900/30 rounded-lg transition-all"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        <IoClose size={24} />
-                    </button>
+                <header className="flex items-center py-5 px-5 border-b border-white/8">
+                    <span className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-light">
+                        Settings
+                    </span>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-6 text-gray-200 text-sm">
+                <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
                     {(Object.keys(SLIDER_CONFIGS) as Array<keyof typeof SLIDER_CONFIGS>).map(
                         renderSlider,
                     )}
 
-                    <section>
-                        <p className="uppercase text-xs text-green-400 font-semibold mb-3">
-                            Character Set
-                        </p>
-                        <div className="grid grid-cols-2 gap-3">
+                    <div className="border-t border-white/8 pt-6">
+                        <span className="text-[10px] tracking-[0.15em] uppercase text-white/40 block mb-3">
+                            Characters
+                        </span>
+                        <div className="flex flex-col gap-0.5">
                             {CHARACTER_SETS.map(c => (
                                 <button
                                     key={c}
-                                    className={`py-3 rounded-md border border-green-500 text-xs uppercase font-semibold transition-all
-                  ${settings.characterSet === c ? 'bg-green-600 text-black' : 'text-green-400 hover:bg-green-900/20'}`}
+                                    className={`text-left py-2 px-2 rounded text-[10px] tracking-[0.1em] uppercase font-light transition-colors ${
+                                        settings.characterSet === c
+                                            ? 'text-white bg-white/10'
+                                            : 'text-white/40 hover:text-white/70'
+                                    }`}
                                     onClick={() => handleChange('characterSet', c)}
                                 >
                                     {c}
                                 </button>
                             ))}
                         </div>
-                    </section>
+                    </div>
 
-                    <section className="space-y-4 pt-2">
+                    <div className="border-t border-white/8 pt-6 space-y-1">
                         {[
-                            { key: 'colorMode', label: 'Color Mode' },
-                            { key: 'invert', label: 'Invert Values' },
+                            { key: 'colorMode', label: 'Color' },
+                            { key: 'invert', label: 'Invert' },
                         ].map(({ key, label }) => (
                             <label
                                 key={key}
-                                className="flex justify-between items-center text-green-400 py-2 cursor-pointer"
+                                className="flex justify-between items-center py-2 px-2 rounded cursor-pointer hover:bg-white/5 transition-colors"
                             >
-                                <span className="text-sm font-medium">{label}</span>
+                                <span className="text-[10px] tracking-[0.15em] uppercase text-white/50 font-light">
+                                    {label}
+                                </span>
                                 <input
                                     type="checkbox"
                                     checked={settings[key as keyof AsciiSettings] as boolean}
@@ -190,34 +185,8 @@ function Settings({ settings, onChange }: SettingsCompProps) {
                                 />
                             </label>
                         ))}
-                    </section>
-                </div>
-
-                <footer className="py-4 px-5 border-t border-green-600">
-                    <div className="flex items-center justify-center gap-6 mb-3">
-                        {[
-                            {
-                                href: 'https://github.com/pshycodr/phosphor-cam',
-                                Icon: FaGithub,
-                                label: 'GitHub',
-                            },
-                            { href: 'https://x.com/the_Aroy', Icon: FaXTwitter, label: 'Twitter' },
-                            { href: 'https://pshycodr.me', Icon: IoGlobe, label: 'Website' },
-                        ].map(({ href, Icon, label }) => (
-                            <a
-                                key={href}
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-green-400 hover:bg-green-900/30 rounded-lg transition-all"
-                                aria-label={label}
-                            >
-                                <Icon size={20} />
-                            </a>
-                        ))}
                     </div>
-                    <div className="text-center text-xs text-green-600">phosphor-cam v1.0</div>
-                </footer>
+                </div>
             </aside>
 
             {activeSlider && sliderRect && (
