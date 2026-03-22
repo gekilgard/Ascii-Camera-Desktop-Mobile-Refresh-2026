@@ -139,7 +139,7 @@ const CameraControls = ({
                             }`}
                         >
                             {isRecording ? (
-                                <div className="w-[calc(100%-2px)] h-[calc(100%-2px)] rounded-full bg-red-500 animate-pulse"></div>
+                                <div className="h-4/5 w-4/5 shrink-0 rounded-full bg-red-500 animate-pulse"></div>
                             ) : (
                                 <div className="w-11 h-11 rounded-full bg-red-500/80 group-hover:bg-red-500 transition-colors"></div>
                             )}
