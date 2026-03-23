@@ -36,6 +36,11 @@ body {
     border-radius: 0;
     cursor: pointer;
     outline: none;
+    /* Extra vertical padding so the touch area extends well beyond the 1px track */
+    padding: 14px 0;
+    margin: -14px 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-x;
 }
 
 .settings-slider::-webkit-slider-runnable-track {
@@ -79,6 +84,22 @@ body {
 .settings-slider:active::-webkit-slider-thumb,
 .settings-slider:active::-moz-range-thumb {
     transform: scale(1.15);
+}
+
+@media (pointer: coarse) {
+    .settings-slider::-webkit-slider-thumb {
+        height: 24px;
+        width: 24px;
+        margin-top: -12px;
+    }
+    .settings-slider::-moz-range-thumb {
+        height: 24px;
+        width: 24px;
+    }
+    .settings-slider {
+        padding: 18px 0;
+        margin: -18px 0;
+    }
 }
 
 .settings-toggle {

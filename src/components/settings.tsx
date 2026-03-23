@@ -132,7 +132,7 @@ function Settings({ settings, onChange, onSettingsSliderActiveChange }: Settings
     return (
         <>
             <button
-                className="fixed right-4 top-[calc(10vh+env(safe-area-inset-top))] z-50 h-8 w-8 items-center justify-center rounded bg-black/60 text-white/70 backdrop-blur-sm transition-colors hover:text-white"
+                className="fixed right-4 top-[calc(var(--ui-top-offset,0px)+env(safe-area-inset-top))] z-50 flex h-8 w-8 items-center justify-center rounded bg-black/60 text-white/70 backdrop-blur-sm transition-colors hover:text-white"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 {isOpen ? (
