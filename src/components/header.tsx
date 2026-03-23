@@ -12,7 +12,7 @@ interface HeaderProps extends ProcessingStats {
 function Header({ fps, renderTime, width, height, hidden }: HeaderProps) {
     return (
         <div
-            className={`fixed top-4 left-4 z-10 transition-opacity duration-500 ease-in-out ${
+            className={`fixed left-4 top-[calc(10vh+env(safe-area-inset-top))] z-10 transition-opacity duration-500 ease-in-out ${
                 hidden ? 'pointer-events-none opacity-0' : 'opacity-100'
             }`}
             aria-hidden={hidden}
